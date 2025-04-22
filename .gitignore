@@ -7,6 +7,7 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/Dotnet.gitignore
 .vscode/
+publish
 
 # Build results
 [Dd]ebug/
