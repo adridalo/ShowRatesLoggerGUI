@@ -8,7 +8,7 @@ on:
 
 env:
     DOTNET_VERSION: '9.0.x'
-    BUILD_CONFIGURATION: 'Release'
+    BUILD_CONFIGURATION: 'Release' 
 
 jobs:
     build:
