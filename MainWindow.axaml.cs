@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,6 +28,7 @@ public partial class MainWindow : Window
     private CancellationTokenSource _cancellationTokenSource;
     private bool _isRunning;
     private bool _isConnected;
+    private string _localHostIpAddress;
 
     public MainWindow()
     {
@@ -60,8 +62,24 @@ public partial class MainWindow : Window
 
     public async void OnConnect(object sender, RoutedEventArgs e)
     {
-        if (!IPAddress.TryParse(IPAddressInput.Text, out _))
+        if(string.IsNullOrEmpty(IPAddressInput.Text)) {
+            return;
+        }
+
+        if(IPAddressInput.Text.ToLower().Equals("localhost")) {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+
+            foreach (var ip in host.AddressList) {
+                if(ip.AddressFamily == AddressFamily.InterNetwork) {
+                    _localHostIpAddress = ip.ToString();
+                    break;
+                }
+            }
+        }
+
+        else if (!IPAddress.TryParse(IPAddressInput.Text, out _))
         {
+            _localHostIpAddress = null;
             UpdateConnectionStatus("Invalid IP address", Brushes.Red);
             return;
         }
@@ -70,10 +88,11 @@ public partial class MainWindow : Window
 
         try
         {
+            _localHostIpAddress = null;
             _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = new CancellationTokenSource();
             
-            _telnetClient = new Client(IPAddressInput.Text, 23, _cancellationTokenSource.Token);
+            _telnetClient = new Client(_localHostIpAddress == null ? IPAddressInput.Text : _localHostIpAddress, 23, _cancellationTokenSource.Token);
             _isConnected = true;
 
             _logFilePath = Path.Combine(
