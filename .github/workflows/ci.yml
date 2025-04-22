@@ -1,73 +1,98 @@
-name: ShowRatesLoggerGUI Pipeline
+name: CI/CD Pipeline
 
-on: 
-    push:
-        branches: [ main ]
-    pull_request:
-        branches: [ main ]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Enable manual triggering
 
 env:
-    DOTNET_VERSION: '9.0.x'
-    BUILD_CONFIGURATION: 'Release' 
+  DOTNET_VERSION: '9.0.x'
+  BUILD_CONFIGURATION: 'Release'
+  PUBLISH_DIR: './publish'
+  ARTIFACT_NAME: 'app-package'
 
 jobs:
-    build:
-        name: Build
-        runs-on: windows-latest
+  build:
+    name: Build and Package
+    runs-on: windows-latest
+    timeout-minutes: 15  # Prevent hanging builds
 
-        steps:
-            - uses: actions/checkout@v4
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Get full git history for versioning
 
-            - name: Setup .NET
-              uses: actions/setup-dotnet@v3
-              with:
-                dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
 
-            - name: Restore dependencies
-              run: dotnet restore
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.nuget/packages
+          **/bin
+          **/obj
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
 
-            - name: Build
-              run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+    - name: Restore dependencies
+      run: dotnet restore
 
-            - name: Publish
-              run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ./publish --self-contained
+    - name: Build
+      run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
-            - name: Upload Artifact
-              uses: actions/upload-artifact@v4
-              with:
-                name: app-package
-                path: ./publish
-                retention-days: 1
+    - name: Publish
+      run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ${{ env.PUBLISH_DIR }} --self-contained -p:PublishReadyToRun=true -p:PublishSingleFile=false
 
-    release:
-      name: Create Release
-      needs: build
-      runs-on: ubuntu-latest
-      if: github.ref == 'refs/heads/main'
-      permissions:
-        contents: write
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.ARTIFACT_NAME }}
+        path: ${{ env.PUBLISH_DIR }}
+        retention-days: 1
 
-      steps:
-        - name: Download Artifact
-          uses: actions/download-artifact@v4
-          with:
-            name: app-package
-            path: release-files
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      packages: read  # For artifact download
 
-        - name: Verify Files
-          run: |
-            echo "Contents of release-files:"
-            ls -R release-files
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.ARTIFACT_NAME }}
+        path: release-files
 
-        - name: Create Release
-          uses: softprops/action-gh-release@v1
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-            tag_name: v${{ github.run_number }}
-            name: Release v${{ github.run_number }}
-            body: |
-              Automatic release of build ${{ github.run_number }}
-              Commit: ${{ github.sha }}
-            files: |
-              release-files/**/*
+    - name: Verify Files
+      run: |
+        echo "Build artifacts:"
+        ls -lhR release-files
+        echo "Total size: $(du -sh release-files | cut -f1)"
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        name: Release v${{ github.run_number }}
+        body: |
+          ## Release Notes
+          - Build Number: ${{ github.run_number }}
+          - Commit: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+          - Build Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+        files: |
+          release-files/**/*
+        draft: false
+        prerelease: false
+        generate_release_notes: true  # Auto-generate notes from PRs
