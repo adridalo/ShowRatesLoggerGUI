@@ -24,7 +24,7 @@ jobs:
                 dotnet-version: ${{ env.DOTNET_VERSION }}
 
             - name: Restore dependencies
-              run: dotnet resotre
+              run: dotnet restore
 
             - name: Build
               run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
