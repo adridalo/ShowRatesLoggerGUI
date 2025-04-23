@@ -5,14 +5,14 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:  # Enable manual triggering
+  workflow_dispatch:
 
 env:
   DOTNET_VERSION: '9.0.x'
   BUILD_CONFIGURATION: 'Release'
   PUBLISH_DIR: './publish'
-  ARTIFACT_NAME: 'ShowRatesLoggerGUI-package'  # Updated artifact name
-  RELEASE_NAME: 'ShowRatesLoggerGUI'  # Added for consistent naming
+  ARTIFACT_NAME: 'ShowRatesLoggerGUI-package'
+  RELEASE_NAME: 'ShowRatesLoggerGUI'
 
 jobs:
   build:
@@ -49,13 +49,19 @@ jobs:
       run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
     - name: Publish
-      run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ${{ env.PUBLISH_DIR }} --self-contained -p:PublishReadyToRun=true -p:PublishSingleFile=false
+      run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ${{ env.PUBLISH_DIR }} --self-contained -p:PublishReadyToRun=true -p:PublishSingleFile=false -p:IncludeAllContentForSelfExtract=true
+
+    - name: Zip artifacts
+      run: |
+        cd ${{ env.PUBLISH_DIR }}
+        zip -r ../ShowRatesLoggerGUI.zip *
+        cd ..
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_NAME }}
-        path: ${{ env.PUBLISH_DIR }}
+        path: ${{ env.PUBLISH_DIR }}/../ShowRatesLoggerGUI.zip
         retention-days: 1
 
   release:
@@ -65,7 +71,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
-      packages: read
 
     steps:
     - name: Download Artifact
@@ -77,8 +82,8 @@ jobs:
     - name: Verify Files
       run: |
         echo "Build artifacts:"
-        ls -lhR release-files
-        echo "Total size: $(du -sh release-files | cut -f1)"
+        ls -lh release-files
+        echo "File type: $(file release-files/ShowRatesLoggerGUI.zip)"
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
@@ -86,14 +91,13 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: v${{ github.run_number }}
-        name: ${{ env.RELEASE_NAME }} v${{ github.run_number }}  # Updated release name
+        name: ${{ env.RELEASE_NAME }} v${{ github.run_number }}
         body: |
           ## Release Notes
           - Build Number: ${{ github.run_number }}
           - Commit: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
-          - Build Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          - Build Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
         files: |
-          release-files/**/*
+          release-files/ShowRatesLoggerGUI.zip
         draft: false
         prerelease: false
-        generate_release_notes: true
