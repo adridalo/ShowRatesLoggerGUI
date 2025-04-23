@@ -11,19 +11,20 @@ env:
   DOTNET_VERSION: '9.0.x'
   BUILD_CONFIGURATION: 'Release'
   PUBLISH_DIR: './publish'
-  ARTIFACT_NAME: 'app-package'
+  ARTIFACT_NAME: 'ShowRatesLoggerGUI-package'  # Updated artifact name
+  RELEASE_NAME: 'ShowRatesLoggerGUI'  # Added for consistent naming
 
 jobs:
   build:
     name: Build and Package
     runs-on: windows-latest
-    timeout-minutes: 15  # Prevent hanging builds
+    timeout-minutes: 15
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Get full git history for versioning
+        fetch-depth: 0
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
@@ -64,7 +65,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
-      packages: read  # For artifact download
+      packages: read
 
     steps:
     - name: Download Artifact
@@ -85,7 +86,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
+        name: ${{ env.RELEASE_NAME }} v${{ github.run_number }}  # Updated release name
         body: |
           ## Release Notes
           - Build Number: ${{ github.run_number }}
@@ -95,4 +96,4 @@ jobs:
           release-files/**/*
         draft: false
         prerelease: false
-        generate_release_notes: true  # Auto-generate notes from PRs
+        generate_release_notes: true
