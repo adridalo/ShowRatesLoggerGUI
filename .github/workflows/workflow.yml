@@ -49,19 +49,18 @@ jobs:
       run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
     - name: Publish
-      run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ${{ env.PUBLISH_DIR }} --self-contained -p:PublishReadyToRun=true -p:PublishSingleFile=false -p:IncludeAllContentForSelfExtract=true
+      run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ${{ env.PUBLISH_DIR }} --self-contained -p:PublishReadyToRun=true -p:PublishSingleFile=false
 
     - name: Zip artifacts
+      shell: pwsh
       run: |
-        cd ${{ env.PUBLISH_DIR }}
-        zip -r ../ShowRatesLoggerGUI.zip *
-        cd ..
+        Compress-Archive -Path ${{ env.PUBLISH_DIR }}/* -DestinationPath ./ShowRatesLoggerGUI.zip -Force
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_NAME }}
-        path: ${{ env.PUBLISH_DIR }}/../ShowRatesLoggerGUI.zip
+        path: ./ShowRatesLoggerGUI.zip
         retention-days: 1
 
   release:
