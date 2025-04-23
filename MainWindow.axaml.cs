@@ -172,7 +172,7 @@ public partial class MainWindow : Window
             File.Delete(_logFilePath);
         
         // Create initial empty file
-        File.WriteAllText(_logFilePath, $"ShowRatesLoggerGUI - {IPAddressInput.Text} - Started at {DateTime.Now + Environment.NewLine}");
+        File.WriteAllText(_logFilePath, $"ShowRatesLoggerGUI || {IPAddressInput.Text} || Started at {DateTime.Now + Environment.NewLine}");
 
         // Reset averages
         _renderAverage = 0;
@@ -192,7 +192,6 @@ public partial class MainWindow : Window
         };
         _executionTimer.Tick += async (s, e) => {
             await ExecuteCommandAsync();
-            UpdateRunStatus("", Brushes.White);
             OpenFileButton.IsEnabled = true;
         };
         
@@ -213,7 +212,7 @@ public partial class MainWindow : Window
     }
     }
 
-    private void StopMonitoring()
+    private void StopMonitoring(bool wallNotStarted = false)
     {
         _isRunning = false;
         _executionTimer?.Stop();
@@ -223,8 +222,10 @@ public partial class MainWindow : Window
         ShowRatesFetchIntervalInput.IsEnabled = true;
 
         OpenFileButton.IsVisible = false;
+        OpenFileButton.IsEnabled = false;
 
-        UpdateRunStatus("Stopped", Brushes.White);
+        if(!wallNotStarted) { UpdateRunStatus("Stopped", Brushes.White); }
+        else { UpdateRunStatus("Wall not started", Brushes.Red); }
     }
 
     private async Task ExecuteCommandAsync()
@@ -239,7 +240,7 @@ public partial class MainWindow : Window
 
             if (response.Contains("NotStarted"))
             {
-                UpdateRunStatus("Wall not started", Brushes.Red);
+                StopMonitoring(true);
                 return;
             }
 
@@ -290,7 +291,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            var logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} : " +
+            var logEntry = $"{DateTime.Now} || " +
                            $"Rates Average : {_renderAverage}, {_captureAverage}, {_transferAverage}";
             
             File.AppendAllText(_logFilePath, logEntry + Environment.NewLine);
