@@ -167,12 +167,12 @@ public partial class MainWindow : Window
         _logFilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
             $"{IPAddressInput.Text}-RatesAverage.txt");
-            
-        if (File.Exists(_logFilePath)) 
-            File.Delete(_logFilePath);
+
+            if (File.Exists(_logFilePath))
+                File.Delete(_logFilePath);
         
         // Create initial empty file
-        File.WriteAllText(_logFilePath, $"ShowRatesLoggerGUI - {IPAddressInput.Text} - Started at {DateTime.Now + Environment.NewLine}");
+        File.WriteAllText(_logFilePath, $"ShowRatesLoggerGUI || {IPAddressInput.Text} || Started at {DateTime.Now + Environment.NewLine}");
 
         // Reset averages
         _renderAverage = 0;
@@ -192,7 +192,6 @@ public partial class MainWindow : Window
         };
         _executionTimer.Tick += async (s, e) => {
             await ExecuteCommandAsync();
-            UpdateRunStatus("", Brushes.White);
             OpenFileButton.IsEnabled = true;
         };
         
@@ -203,6 +202,7 @@ public partial class MainWindow : Window
         RunButton.Content = "Stop";
         RunButton.Foreground = Brushes.Red;
         ShowRatesFetchIntervalInput.IsEnabled = false;
+        ShowAllSourceRatesCheckbox.IsEnabled = false;
         OpenFileButton.IsVisible = true;
         OpenFileButton.Content = "Open File";
         UpdateRunStatus("Running...", Brushes.Orange);
@@ -213,7 +213,7 @@ public partial class MainWindow : Window
     }
     }
 
-    private void StopMonitoring()
+    private void StopMonitoring(bool wallNotStarted = false)
     {
         _isRunning = false;
         _executionTimer?.Stop();
@@ -221,10 +221,13 @@ public partial class MainWindow : Window
         RunButton.Content = "Run";
         RunButton.Foreground = Brushes.White;
         ShowRatesFetchIntervalInput.IsEnabled = true;
+        ShowAllSourceRatesCheckbox.IsEnabled = true;
 
         OpenFileButton.IsVisible = false;
+        OpenFileButton.IsEnabled = false;
 
-        UpdateRunStatus("Stopped", Brushes.White);
+        if(!wallNotStarted) { UpdateRunStatus("Stopped", Brushes.White); }
+        else { UpdateRunStatus("Wall not started", Brushes.Red); }
     }
 
     private async Task ExecuteCommandAsync()
@@ -239,11 +242,11 @@ public partial class MainWindow : Window
 
             if (response.Contains("NotStarted"))
             {
-                UpdateRunStatus("Wall not started", Brushes.Red);
+                StopMonitoring(true);
                 return;
             }
 
-            ProcessResponse(response);
+            ProcessResponse(response, ShowAllSourceRatesCheckbox.IsChecked);
         }
         catch (TaskCanceledException)
         {
@@ -260,23 +263,33 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ProcessResponse(string response)
+    private void ProcessResponse(string response, bool? showAllSourceRates = false)
     {
-        var averages = response?
+        if((bool)showAllSourceRates) {
+            var cleanedResponse = string.Join(Environment.NewLine, response.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(line => !line.Contains('>') && !line.Contains("***showrates***")));
+            cleanedResponse += "\n";
+            
+            if (cleanedResponse == null) return;
+
+            LogToFile(cleanedResponse);
+        } else {
+            var averages = response?
             .Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries)
             .FirstOrDefault(line => line.StartsWith("Layout average"));
 
-        if (averages == null) return;
+            if (averages == null) return;
 
-        var match = Regex.Matches(averages, @"\d+\.\d+");
-        if (match.Count < 3) return;
+            var match = Regex.Matches(averages, @"\d+\.\d+");
+            if (match.Count < 3) return;
 
-        UpdateAverages(
-            double.Parse(match[0].Value),
-            double.Parse(match[1].Value),
-            double.Parse(match[2].Value));
+            UpdateAverages(
+                double.Parse(match[0].Value),
+                double.Parse(match[1].Value),
+                double.Parse(match[2].Value));
 
-        LogToFile();
+            LogToFile();
+        }
     }
 
     private void UpdateAverages(double render, double capture, double transfer)
@@ -286,14 +299,18 @@ public partial class MainWindow : Window
         _transferAverage = _transferAverage == 0 ? transfer : Math.Round((transfer + _transferAverage) / 2, 2);
     }
 
-    private void LogToFile()
+    private void LogToFile(string content = null)
     {
         try
         {
-            var logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} : " +
+            if(content == null) {
+                var logEntry = $"{DateTime.Now} || " +
                            $"Rates Average : {_renderAverage}, {_captureAverage}, {_transferAverage}";
             
-            File.AppendAllText(_logFilePath, logEntry + Environment.NewLine);
+                File.AppendAllText(_logFilePath, logEntry + Environment.NewLine);
+            } else {
+                File.AppendAllText(_logFilePath, content);
+            }
         }
         catch (Exception ex)
         {
