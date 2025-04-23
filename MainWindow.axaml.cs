@@ -167,9 +167,9 @@ public partial class MainWindow : Window
         _logFilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
             $"{IPAddressInput.Text}-RatesAverage.txt");
-            
-        if (File.Exists(_logFilePath)) 
-            File.Delete(_logFilePath);
+
+            if (File.Exists(_logFilePath))
+                File.Delete(_logFilePath);
         
         // Create initial empty file
         File.WriteAllText(_logFilePath, $"ShowRatesLoggerGUI || {IPAddressInput.Text} || Started at {DateTime.Now + Environment.NewLine}");
@@ -202,6 +202,7 @@ public partial class MainWindow : Window
         RunButton.Content = "Stop";
         RunButton.Foreground = Brushes.Red;
         ShowRatesFetchIntervalInput.IsEnabled = false;
+        ShowAllSourceRatesCheckbox.IsEnabled = false;
         OpenFileButton.IsVisible = true;
         OpenFileButton.Content = "Open File";
         UpdateRunStatus("Running...", Brushes.Orange);
@@ -220,6 +221,7 @@ public partial class MainWindow : Window
         RunButton.Content = "Run";
         RunButton.Foreground = Brushes.White;
         ShowRatesFetchIntervalInput.IsEnabled = true;
+        ShowAllSourceRatesCheckbox.IsEnabled = true;
 
         OpenFileButton.IsVisible = false;
         OpenFileButton.IsEnabled = false;
@@ -244,7 +246,7 @@ public partial class MainWindow : Window
                 return;
             }
 
-            ProcessResponse(response);
+            ProcessResponse(response, ShowAllSourceRatesCheckbox.IsChecked);
         }
         catch (TaskCanceledException)
         {
@@ -261,23 +263,33 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ProcessResponse(string response)
+    private void ProcessResponse(string response, bool? showAllSourceRates = false)
     {
-        var averages = response?
+        if((bool)showAllSourceRates) {
+            var cleanedResponse = string.Join(Environment.NewLine, response.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(line => !line.Contains('>') && !line.Contains("***showrates***")));
+            cleanedResponse += "\n";
+            
+            if (cleanedResponse == null) return;
+
+            LogToFile(cleanedResponse);
+        } else {
+            var averages = response?
             .Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries)
             .FirstOrDefault(line => line.StartsWith("Layout average"));
 
-        if (averages == null) return;
+            if (averages == null) return;
 
-        var match = Regex.Matches(averages, @"\d+\.\d+");
-        if (match.Count < 3) return;
+            var match = Regex.Matches(averages, @"\d+\.\d+");
+            if (match.Count < 3) return;
 
-        UpdateAverages(
-            double.Parse(match[0].Value),
-            double.Parse(match[1].Value),
-            double.Parse(match[2].Value));
+            UpdateAverages(
+                double.Parse(match[0].Value),
+                double.Parse(match[1].Value),
+                double.Parse(match[2].Value));
 
-        LogToFile();
+            LogToFile();
+        }
     }
 
     private void UpdateAverages(double render, double capture, double transfer)
@@ -287,14 +299,18 @@ public partial class MainWindow : Window
         _transferAverage = _transferAverage == 0 ? transfer : Math.Round((transfer + _transferAverage) / 2, 2);
     }
 
-    private void LogToFile()
+    private void LogToFile(string content = null)
     {
         try
         {
-            var logEntry = $"{DateTime.Now} || " +
+            if(content == null) {
+                var logEntry = $"{DateTime.Now} || " +
                            $"Rates Average : {_renderAverage}, {_captureAverage}, {_transferAverage}";
             
-            File.AppendAllText(_logFilePath, logEntry + Environment.NewLine);
+                File.AppendAllText(_logFilePath, logEntry + Environment.NewLine);
+            } else {
+                File.AppendAllText(_logFilePath, content);
+            }
         }
         catch (Exception ex)
         {
