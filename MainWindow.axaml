@@ -19,14 +19,18 @@
         </StackPanel>
         <Separator />
         <StackPanel IsVisible="false" x:Name="ShowRatesFetchIntervalSection" IsEnabled="false">
-            <Label HorizontalAlignment="Center">Enter interval of getting rates (in seconds):</Label>
-            <TextBox HorizontalContentAlignment="Center" Width="100" x:Name="ShowRatesFetchIntervalInput" />
+            <Label HorizontalAlignment="Center">Interval of getting rates:</Label>
+			<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="5,5,5,5">
+                <NumericUpDown HorizontalContentAlignment="Center" Width="200" x:Name="ShowRatesFetchIntervalInput" Increment="5" />
+				<Label>seconds</Label>
+			</StackPanel>
             <Button Click="OnRun" HorizontalAlignment="Center" FontWeight="Bold" x:Name="RunButton">Run</Button>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Label VerticalAlignment="Center">Show rates on each source</Label>    
-                <CheckBox VerticalAlignment="Center" />
+                <CheckBox x:Name="ShowAllSourceRatesCheckbox" VerticalAlignment="Center" />
             </StackPanel>
-            <TextBlock x:Name="RunStatus" Text="" HorizontalAlignment="Center" FontWeight="Bold" />
+			<Separator />
+			<TextBlock x:Name="RunStatus" Text="" HorizontalAlignment="Center" FontWeight="Bold" />
             <Button Click="OpenLogFile" x:Name="OpenFileButton" HorizontalAlignment="Center" IsVisible="false" IsEnabled="false"></Button>
         </StackPanel>
     </StackPanel>
