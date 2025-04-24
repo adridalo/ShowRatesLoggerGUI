@@ -86,8 +86,7 @@ jobs:
 
     - name: Get current time
       run: |
-        $NOW=& Get-Date -format yyyy-MM-dd
-        echo "NOW=$NOW" >> $env:GITHUB_ENV
+        echo "NOW=$(date +"%Y-%m-%d %H:%M:%S")" >> $GITHUB_ENV
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
