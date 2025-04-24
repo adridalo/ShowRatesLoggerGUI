@@ -95,7 +95,7 @@ jobs:
           ## Release Notes
           - Build Number: ${{ github.run_number }}
           - Commit: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
-          - Build Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          - Build Date: ${{ steps.date.outputs.date }}
         files: |
           release-files/ShowRatesLoggerGUI.zip
         draft: false
