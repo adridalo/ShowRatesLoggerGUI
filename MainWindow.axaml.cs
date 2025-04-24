@@ -266,10 +266,13 @@ public partial class MainWindow : Window
     private void ProcessResponse(string response, bool? showAllSourceRates = false)
     {
         if((bool)showAllSourceRates) {
-            var cleanedResponse = string.Join(Environment.NewLine, response.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-                .Where(line => !line.Contains('>') && !line.Contains("***showrates***")));
-            cleanedResponse += "\n";
-            
+            var timestamp = DateTime.Now.ToString();
+            var filteredLines = response
+                .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(l => !l.Contains('>') && !l.Contains("***showrates***"));
+
+            var cleanedResponse =  $"{timestamp}:\n{string.Join(Environment.NewLine, filteredLines)}\n\n";
+
             if (cleanedResponse == null) return;
 
             LogToFile(cleanedResponse);
