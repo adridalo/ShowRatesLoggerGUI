@@ -85,9 +85,9 @@ jobs:
         echo "File type: $(file release-files/ShowRatesLoggerGUI.zip)"
 
     - name: Get current time
-        run: |
-          $NOW=& Get-Date -format yyyy-MM-dd
-          echo $NOW >> $env:GITHUB_ENV
+      run: |
+        $NOW=& Get-Date -format yyyy-MM-dd
+        echo "NOW=$NOW" >> $env:GITHUB_ENV
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
