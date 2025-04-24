@@ -19,5 +19,7 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="telnet" Version="0.13.1" />
+	<AvaloniaResource Include="**\*.xaml" />
+	<AvaloniaResource Include="Assets\**" />  
   </ItemGroup>
 </Project>
