@@ -203,6 +203,8 @@ public partial class MainWindow : Window
         RunButton.Foreground = Brushes.Red;
         ShowRatesFetchIntervalInput.IsEnabled = false;
         ShowAllSourceRatesCheckbox.IsEnabled = false;
+        IPAddressInput.IsEnabled = false;
+        ConnectButton.IsEnabled = false;
         OpenFileButton.IsVisible = true;
         OpenFileButton.Content = "Open File";
         UpdateRunStatus("Running...", Brushes.Orange);
@@ -226,7 +228,10 @@ public partial class MainWindow : Window
         OpenFileButton.IsVisible = false;
         OpenFileButton.IsEnabled = false;
 
-        if(!wallNotStarted) { UpdateRunStatus("Stopped", Brushes.White); }
+        IPAddressInput.IsEnabled = true;
+        ConnectButton.IsEnabled = true;
+
+        if (!wallNotStarted) { UpdateRunStatus("Stopped", Brushes.White); }
         else { UpdateRunStatus("Wall not started", Brushes.Red); }
     }
 

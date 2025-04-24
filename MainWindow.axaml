@@ -14,7 +14,7 @@
         <StackPanel HorizontalAlignment="Center">
             <Label HorizontalAlignment="Center">Enter IP address of wall:</Label>
             <TextBox HorizontalContentAlignment="Center" Width="200" x:Name="IPAddressInput" />
-            <Button Click="OnConnect" HorizontalAlignment="Center" FontWeight="Bold">Connect</Button>
+            <Button x:Name="ConnectButton" Click="OnConnect" HorizontalAlignment="Center" FontWeight="Bold">Connect</Button>
             <TextBlock x:Name="IPAddressStatus" Text="" HorizontalAlignment="Center" FontWeight="Bold" />
         </StackPanel>
         <Separator />
