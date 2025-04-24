@@ -84,6 +84,11 @@ jobs:
         ls -lh release-files
         echo "File type: $(file release-files/ShowRatesLoggerGUI.zip)"
 
+    - name: Get current time
+        run: |
+          $NOW=& Get-Date -format yyyy-MM-dd
+          echo $NOW >> $env:GITHUB_ENV
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       env:
@@ -95,7 +100,7 @@ jobs:
           ## Release Notes
           - Build Number: ${{ github.run_number }}
           - Commit: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
-          - Build Date: ${{ steps.date.outputs.date }}
+          - Build Date: ${{ env.NOW }}
         files: |
           release-files/ShowRatesLoggerGUI.zip
         draft: false
