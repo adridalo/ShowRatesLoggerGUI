@@ -22,4 +22,8 @@
 	<AvaloniaResource Include="**\*.xaml" />
 	<AvaloniaResource Include="Assets\**" />  
   </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="workflow.yml" />
+  </ItemGroup>
 </Project>
