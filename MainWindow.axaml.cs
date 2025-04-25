@@ -98,22 +98,7 @@ public partial class MainWindow : Window
 
         try
         {
-            _localHostIpAddress = null;
-            _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = new CancellationTokenSource();
-
-            _telnetClient = new Client(_localHostIpAddress == null ? IPAddressInput.Text : _localHostIpAddress, 23, _cancellationTokenSource.Token);
-            _isConnected = true;
-
-            _logFilePath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                $"{IPAddressInput.Text}-RatesAverage.txt");
-
-            UpdateConnectionStatus("Connected!", Brushes.Green);
-            ShowRatesFetchIntervalSection.IsEnabled = true;
-            ShowRatesFetchIntervalSection.IsVisible = true;
-            ShowRatesFetchIntervalInput.Text = string.Empty;
-            GetNumberOfWindows();
+            AttemptConnection();
         }
         catch (Exception ex)
         {
@@ -123,6 +108,22 @@ public partial class MainWindow : Window
 - Port 23 (telnet) is blocked
 - Device is not running", Brushes.Red);
         }
+    }
+    private void AttemptConnection()
+    {
+        _localHostIpAddress = null;
+        _cancellationTokenSource?.Dispose();
+        _cancellationTokenSource = new CancellationTokenSource();
+
+        _telnetClient = new Client(_localHostIpAddress == null ? IPAddressInput.Text : _localHostIpAddress, 23, _cancellationTokenSource.Token);
+         
+        _isConnected = true;
+
+        UpdateConnectionStatus("Connected!", Brushes.Green);
+        ShowRatesFetchIntervalSection.IsEnabled = true;
+        ShowRatesFetchIntervalSection.IsVisible = true;
+        ShowRatesFetchIntervalInput.Text = string.Empty;
+        GetNumberOfWindows();
     }
 
     public async void OnRun(object sender, RoutedEventArgs e)
@@ -184,13 +185,19 @@ public partial class MainWindow : Window
             // Initialize/clear the log file
             _logFilePath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                $"{IPAddressInput.Text}-RatesAverage.txt");
+                (bool)CsvOutputCheckbox.IsChecked ? $"{IPAddressInput.Text}-RatesAverage.csv" : $"{IPAddressInput.Text}-RatesAverage.txt");
 
             if (File.Exists(_logFilePath))
                 File.Delete(_logFilePath);
 
             // Create initial empty file
-            File.WriteAllText(_logFilePath, $"ShowRatesLoggerGUI || {IPAddressInput.Text} || Started at {DateTime.Now} | {_windowsQuantity} windows{Environment.NewLine}");
+            if ((bool)CsvOutputCheckbox.IsChecked)
+            {
+                File.WriteAllText(_logFilePath, $"Time,Render,Capture,Transfer{Environment.NewLine}");
+            } else
+            {
+                File.WriteAllText(_logFilePath, $"ShowRatesLoggerGUI || {IPAddressInput.Text} || Started at {DateTime.Now} | {_windowsQuantity} windows{Environment.NewLine}");
+            }
 
             // Reset averages
             _renderAverage = 0;
@@ -222,6 +229,7 @@ public partial class MainWindow : Window
             RunButton.Foreground = Brushes.Red;
             ShowRatesFetchIntervalInput.IsEnabled = false;
             ShowAllSourceRatesCheckbox.IsEnabled = false;
+            CsvOutputCheckbox.IsEnabled = false;
             IPAddressInput.IsEnabled = false;
             ConnectButton.IsEnabled = false;
             OpenFileButton.IsVisible = true;
@@ -243,6 +251,7 @@ public partial class MainWindow : Window
         RunButton.Foreground = Brushes.White;
         ShowRatesFetchIntervalInput.IsEnabled = true;
         ShowAllSourceRatesCheckbox.IsEnabled = true;
+        CsvOutputCheckbox.IsEnabled = true;
 
         OpenFileButton.IsVisible = false;
         OpenFileButton.IsEnabled = false;
@@ -276,7 +285,7 @@ public partial class MainWindow : Window
                 return;
             }
 
-            ProcessResponse(response, ShowAllSourceRatesCheckbox.IsChecked);
+            ProcessResponse(response, ShowAllSourceRatesCheckbox.IsChecked, CsvOutputCheckbox.IsChecked);
         }
         catch (TaskCanceledException)
         {
@@ -293,7 +302,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ProcessResponse(string response, bool? showAllSourceRates = false)
+    private void ProcessResponse(string response, bool? showAllSourceRates = false, bool? outputToCsv = false)
     {
         if ((bool)showAllSourceRates)
         {
@@ -308,24 +317,33 @@ public partial class MainWindow : Window
 
             LogToFile(cleanedResponse);
         }
+        else if((bool)outputToCsv)
+        {
+            GetAverageRates(response);
+            LogToFile(response, true);
+        }
         else
         {
-            var averages = response?
-            .Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries)
-            .FirstOrDefault(line => line.StartsWith("Layout average"));
-
-            if (averages == null) return;
-
-            var match = Regex.Matches(averages, @"\d+\.\d+");
-            if (match.Count < 3) return;
-
-            UpdateAverages(
-                double.Parse(match[0].Value),
-                double.Parse(match[1].Value),
-                double.Parse(match[2].Value));
-
+            GetAverageRates(response);
             LogToFile();
         }
+    }
+
+    private void GetAverageRates(string response)
+    {
+        var averages = response?
+                    .Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries)
+                    .FirstOrDefault(line => line.StartsWith("Layout average"));
+
+        if (averages == null) return;
+
+        var match = Regex.Matches(averages, @"\d+\.\d+");
+        if (match.Count < 3) return;
+
+        UpdateAverages(
+            double.Parse(match[0].Value),
+            double.Parse(match[1].Value),
+            double.Parse(match[2].Value));
     }
 
     private async void GetNumberOfWindows()
@@ -359,7 +377,7 @@ public partial class MainWindow : Window
         _transferAverage = _transferAverage == 0 ? transfer : Math.Round((transfer + _transferAverage) / 2, 2);
     }
 
-    private void LogToFile(string content = null)
+    private void LogToFile(string content = null, bool outputToCsv = false)
     {
         try
         {
@@ -372,7 +390,14 @@ public partial class MainWindow : Window
             }
             else
             {
-                File.AppendAllText(_logFilePath, content);
+                if(outputToCsv)
+                {
+                    File.AppendAllText(_logFilePath, $"{DateTime.Now},{_renderAverage},{_captureAverage},{_transferAverage}{Environment.NewLine}");
+                }
+                else
+                {
+                    File.AppendAllText(_logFilePath, content);
+                }
             }
         }
         catch (Exception ex)
