@@ -87,7 +87,15 @@ jobs:
     - name: Extract Features from Commits
       id: features
       run: |
-        COMMITS=$(git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD)
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        if [ -z "$LAST_TAG" ]; then
+            echo "No previous tag found, listing all commits"
+            COMMITS=$(git log --pretty=format:"- %s")
+        else 
+            echo "Last tag found: $LAST_TAG"
+            COMMITS=$(git log --pretty=format:"- %s" $LAST_TAG..HEAD)
+        fi
+
         echo "COMMITS<<EOF" >> $GITHUB_ENV
         echo "$COMMITS" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
