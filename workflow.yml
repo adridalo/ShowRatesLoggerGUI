@@ -85,7 +85,6 @@ jobs:
         echo "File type: $(file release-files/ShowRatesLoggerGUI.zip)"
 
     - name: Extract Features from Commits
-      id: features
       run: |
         LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
         if [ -z "$LAST_TAG" ]; then
