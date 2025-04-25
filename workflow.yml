@@ -1,0 +1,112 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  BUILD_CONFIGURATION: 'Release'
+  PUBLISH_DIR: './publish'
+  ARTIFACT_NAME: 'ShowRatesLoggerGUI-package'
+  RELEASE_NAME: 'ShowRatesLoggerGUI'
+
+jobs:
+  build:
+    name: Build and Package
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.nuget/packages
+          **/bin
+          **/obj
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+    - name: Publish
+      run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ${{ env.PUBLISH_DIR }} --self-contained -p:PublishReadyToRun=true -p:PublishSingleFile=false
+
+    - name: Zip artifacts
+      shell: pwsh
+      run: |
+        Compress-Archive -Path ${{ env.PUBLISH_DIR }}/* -DestinationPath ./ShowRatesLoggerGUI.zip -Force
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.ARTIFACT_NAME }}
+        path: ./ShowRatesLoggerGUI.zip
+        retention-days: 1
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.ARTIFACT_NAME }}
+        path: release-files
+
+    - name: Verify Files
+      run: |
+        echo "Build artifacts:"
+        ls -lh release-files
+        echo "File type: $(file release-files/ShowRatesLoggerGUI.zip)"
+
+    - name: Extract Features from Commits
+      id: features
+      run: |
+        COMMITS=$(git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD)
+        echo "COMMITS<<EOF" >> $GITHUB_ENV
+        echo "$COMMITS" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        name: ${{ env.RELEASE_NAME }} v${{ github.run_number }}
+        body: |
+          ## Release Notes
+          - Build Number: ${{ github.run_number }}
+          - Commit: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+          - Build Date: ${{ steps.date.outputs.date }}
+    
+          ${{ env.COMMITS }}
+        files: |
+          release-files/ShowRatesLoggerGUI.zip
+        draft: false
+        prerelease: false
