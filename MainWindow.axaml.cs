@@ -113,6 +113,7 @@ public partial class MainWindow : Window
             ShowRatesFetchIntervalSection.IsEnabled = true;
             ShowRatesFetchIntervalSection.IsVisible = true;
             ShowRatesFetchIntervalInput.Text = string.Empty;
+            GetNumberOfWindows();
         }
         catch (Exception ex)
         {
@@ -189,7 +190,7 @@ public partial class MainWindow : Window
                 File.Delete(_logFilePath);
 
             // Create initial empty file
-            File.WriteAllText(_logFilePath, $"ShowRatesLoggerGUI || {IPAddressInput.Text} || Started at {DateTime.Now + Environment.NewLine}");
+            File.WriteAllText(_logFilePath, $"ShowRatesLoggerGUI || {IPAddressInput.Text} || Started at {DateTime.Now} | {_windowsQuantity} windows{Environment.NewLine}");
 
             // Reset averages
             _renderAverage = 0;
@@ -309,7 +310,6 @@ public partial class MainWindow : Window
         }
         else
         {
-            GetNumberOfWindows();
             var averages = response?
             .Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries)
             .FirstOrDefault(line => line.StartsWith("Layout average"));
