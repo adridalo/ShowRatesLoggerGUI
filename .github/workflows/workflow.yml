@@ -72,6 +72,11 @@ jobs:
       contents: write
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
@@ -116,6 +121,8 @@ jobs:
           - Build Number: ${{ github.run_number }}
           - Commit: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
           - Build Date: ${{ env.NOW }}
+  
+          ${{ env.COMMITS }}
         files: |
           release-files/ShowRatesLoggerGUI.zip
         draft: false
