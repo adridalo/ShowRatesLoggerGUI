@@ -19,11 +19,13 @@ public partial class MainWindow : Window
 {
     private string _logFilePath;
     private Client _telnetClient;
-    private const string Command = "***showrates*** terminal\n\r";
+    private const string ShowRatesTerminalCommand = "***showrates*** terminal\n\r";
+    private const string StatusCommand = "status\n\r";
     private double _renderAverage;
     private double _captureAverage;
     private double _transferAverage;
     private double _fetchInterval;
+    private int _windowsQuantity = 0;
     private DispatcherTimer _executionTimer;
     private CancellationTokenSource _cancellationTokenSource;
     private bool _isRunning;
@@ -32,17 +34,21 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
-        ProcessStartInfo psi = new ProcessStartInfo {
+        ProcessStartInfo psi = new ProcessStartInfo
+        {
             FileName = "netsh",
             Arguments = $"advfirewall firewall add rule name=\"ShowRatesLoggerGUI Port\" dir=in action=allow protocol=TCP localport=23",
             Verb = "runas",
             UseShellExecute = true
         };
 
-        try {
+        try
+        {
             Process.Start(psi)?.WaitForExit();
             System.Console.WriteLine($"Port 23 opened in firewall");
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             System.Console.WriteLine("Failed to open port 23:", ex.Message);
         }
         InitializeComponent();
@@ -62,15 +68,19 @@ public partial class MainWindow : Window
 
     public async void OnConnect(object sender, RoutedEventArgs e)
     {
-        if(string.IsNullOrEmpty(IPAddressInput.Text)) {
+        if (string.IsNullOrEmpty(IPAddressInput.Text))
+        {
             return;
         }
 
-        if(IPAddressInput.Text.ToLower().Equals("localhost")) {
+        if (IPAddressInput.Text.ToLower().Equals("localhost"))
+        {
             var host = Dns.GetHostEntry(Dns.GetHostName());
 
-            foreach (var ip in host.AddressList) {
-                if(ip.AddressFamily == AddressFamily.InterNetwork) {
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
                     _localHostIpAddress = ip.ToString();
                     break;
                 }
@@ -91,7 +101,7 @@ public partial class MainWindow : Window
             _localHostIpAddress = null;
             _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = new CancellationTokenSource();
-            
+
             _telnetClient = new Client(_localHostIpAddress == null ? IPAddressInput.Text : _localHostIpAddress, 23, _cancellationTokenSource.Token);
             _isConnected = true;
 
@@ -103,6 +113,7 @@ public partial class MainWindow : Window
             ShowRatesFetchIntervalSection.IsEnabled = true;
             ShowRatesFetchIntervalSection.IsVisible = true;
             ShowRatesFetchIntervalInput.Text = string.Empty;
+            GetNumberOfWindows();
         }
         catch (Exception ex)
         {
@@ -139,80 +150,88 @@ public partial class MainWindow : Window
         }
     }
 
-    public void OpenLogFile(object sender, RoutedEventArgs e) {
-        try {
-            if (string.IsNullOrEmpty(_logFilePath)) {
+    public void OpenLogFile(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(_logFilePath))
+            {
                 UpdateRunStatus("No log file path set", Brushes.Orange);
                 return;
             }
 
-            if (!File.Exists(_logFilePath)) {
+            if (!File.Exists(_logFilePath))
+            {
                 UpdateRunStatus("Log file doesn't exist yet", Brushes.Orange);
             }
 
-            Process.Start(new ProcessStartInfo {
+            Process.Start(new ProcessStartInfo
+            {
                 FileName = _logFilePath,
                 UseShellExecute = true
             });
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             UpdateRunStatus($"Error opening file: {ex.Message}", Brushes.Red);
         }
     }
 
     private void StartMonitoring()
     {
-        try 
-    {
-        // Initialize/clear the log file
-        _logFilePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            $"{IPAddressInput.Text}-RatesAverage.txt");
+        try
+        {
+            // Initialize/clear the log file
+            _logFilePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                $"{IPAddressInput.Text}-RatesAverage.txt");
 
             if (File.Exists(_logFilePath))
                 File.Delete(_logFilePath);
-        
-        // Create initial empty file
-        File.WriteAllText(_logFilePath, $"ShowRatesLoggerGUI || {IPAddressInput.Text} || Started at {DateTime.Now + Environment.NewLine}");
 
-        // Reset averages
-        _renderAverage = 0;
-        _captureAverage = 0;
-        _transferAverage = 0;
+            // Create initial empty file
+            File.WriteAllText(_logFilePath, $"ShowRatesLoggerGUI || {IPAddressInput.Text} || Started at {DateTime.Now} | {_windowsQuantity} windows{Environment.NewLine}");
 
-        // Stop any existing timer
-        _executionTimer?.Stop();
-        
-        // Execute first command immediately
-        ExecuteCommandAsync();
-        
-        // Set up timer for subsequent executions
-        _executionTimer = new DispatcherTimer
+            // Reset averages
+            _renderAverage = 0;
+            _captureAverage = 0;
+            _transferAverage = 0;
+
+            // Stop any existing timer
+            _executionTimer?.Stop();
+
+            // Execute first command immediately
+            ExecuteCommandAsync();
+
+            // Set up timer for subsequent executions
+            _executionTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(_fetchInterval)
+            };
+            _executionTimer.Tick += async (s, e) =>
+            {
+                await ExecuteCommandAsync();
+                OpenFileButton.IsEnabled = true;
+            };
+
+            _executionTimer.Start();
+            _isRunning = true;
+
+            // Update UI
+            RunButton.Content = "Stop";
+            RunButton.Foreground = Brushes.Red;
+            ShowRatesFetchIntervalInput.IsEnabled = false;
+            ShowAllSourceRatesCheckbox.IsEnabled = false;
+            IPAddressInput.IsEnabled = false;
+            ConnectButton.IsEnabled = false;
+            OpenFileButton.IsVisible = true;
+            OpenFileButton.Content = "Open File";
+            UpdateRunStatus("Running...", Brushes.Orange);
+        }
+        catch (Exception ex)
         {
-            Interval = TimeSpan.FromSeconds(_fetchInterval)
-        };
-        _executionTimer.Tick += async (s, e) => {
-            await ExecuteCommandAsync();
-            OpenFileButton.IsEnabled = true;
-        };
-        
-        _executionTimer.Start();
-        _isRunning = true;
-
-        // Update UI
-        RunButton.Content = "Stop";
-        RunButton.Foreground = Brushes.Red;
-        ShowRatesFetchIntervalInput.IsEnabled = false;
-        ShowAllSourceRatesCheckbox.IsEnabled = false;
-        IPAddressInput.IsEnabled = false;
-        ConnectButton.IsEnabled = false;
-        OpenFileButton.IsVisible = true;
-        OpenFileButton.Content = "Open File";
-        UpdateRunStatus("Running...", Brushes.Orange);
-    }
-    catch (Exception ex)
-    {
-        UpdateRunStatus($"Start failed: {ex.Message}", Brushes.Red);
-    }
+            UpdateRunStatus($"Start failed: {ex.Message}", Brushes.Red);
+        }
     }
 
     private void StopMonitoring(bool wallNotStarted = false)
@@ -235,6 +254,13 @@ public partial class MainWindow : Window
         else { UpdateRunStatus("Wall not started", Brushes.Red); }
     }
 
+    private async Task<string> GetResponseAsync(string command, int readFromServer = 1)
+    {
+        await _telnetClient.WriteLineAsync(command);
+        string response = await _telnetClient.ReadAsync(TimeSpan.FromMinutes(readFromServer));
+        return response;
+    }
+
     private async Task ExecuteCommandAsync()
     {
         if (!_isRunning || _telnetClient == null || _cancellationTokenSource?.IsCancellationRequested == true)
@@ -242,8 +268,7 @@ public partial class MainWindow : Window
 
         try
         {
-            await _telnetClient.WriteLineAsync(Command);
-            string response = await _telnetClient.ReadAsync(TimeSpan.FromMinutes(1));
+            string response = await GetResponseAsync(ShowRatesTerminalCommand);
 
             if (response.Contains("NotStarted"))
             {
@@ -270,18 +295,21 @@ public partial class MainWindow : Window
 
     private void ProcessResponse(string response, bool? showAllSourceRates = false)
     {
-        if((bool)showAllSourceRates) {
+        if ((bool)showAllSourceRates)
+        {
             var timestamp = DateTime.Now.ToString();
             var filteredLines = response
                 .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
                 .Where(l => !l.Contains('>') && !l.Contains("***showrates***"));
 
-            var cleanedResponse =  $"{timestamp}:\n{string.Join(Environment.NewLine, filteredLines)}\n\n";
+            var cleanedResponse = $"{timestamp}:\n{string.Join(Environment.NewLine, filteredLines)}\n\n";
 
             if (cleanedResponse == null) return;
 
             LogToFile(cleanedResponse);
-        } else {
+        }
+        else
+        {
             var averages = response?
             .Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries)
             .FirstOrDefault(line => line.StartsWith("Layout average"));
@@ -300,6 +328,30 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void GetNumberOfWindows()
+    {
+        string status = await GetResponseAsync(StatusCommand);
+        string currentLayout = "";
+
+        foreach (var line in status.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            if(line.StartsWith("CurrentLayout:"))
+            {
+                currentLayout = line.Split(":")[1].Trim();
+                break;
+            }
+        }
+
+        string windowsResponse = await GetResponseAsync($"window \"{currentLayout}\" \r\n");
+
+        var match = Regex.Match(windowsResponse, @"-(\d+)");
+        if(match.Success)
+        {
+            _windowsQuantity = int.Parse(match.Groups[1].Value.Trim()) + 1;
+        } 
+        return;
+    }
+
     private void UpdateAverages(double render, double capture, double transfer)
     {
         _renderAverage = _renderAverage == 0 ? render : Math.Round((render + _renderAverage) / 2, 2);
@@ -311,12 +363,15 @@ public partial class MainWindow : Window
     {
         try
         {
-            if(content == null) {
+            if (content == null)
+            {
                 var logEntry = $"{DateTime.Now} || " +
                            $"Rates Average : {_renderAverage}, {_captureAverage}, {_transferAverage}";
-            
+
                 File.AppendAllText(_logFilePath, logEntry + Environment.NewLine);
-            } else {
+            }
+            else
+            {
                 File.AppendAllText(_logFilePath, content);
             }
         }
@@ -354,10 +409,10 @@ public partial class MainWindow : Window
     {
         _isRunning = false;
         _executionTimer?.Stop();
-        
+
         _cancellationTokenSource?.Cancel();
         _cancellationTokenSource?.Dispose();
-        
+
         _telnetClient?.Dispose();
     }
 }
