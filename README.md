@@ -7,7 +7,7 @@ This application is used to log rates from a Mura video wall to a file in which 
 
 ## How to use
 
-1. From within the application folder, find the 'ShowRatesLoggerGUI.exe' executable and run it (a pop-up will appear asking if you would like to run it (not recognized by Windows so it will deem it as harmful software). Click 'Run' and open the application).
+1. From within the application folder, find the '_ShowRatesLoggerGUI.exe' executable and run it (a pop-up will appear asking if you would like to run it (not recognized by Windows so it will deem it as harmful software). Click 'Run' and open the application).
 2. Upon opening of the app, you'll be asked to enter an IP address of the wall you'd like to interact with. Enter the IP of the system you'd like to get rates for and click 'Connect'.
 
 Note: Make sure that the system you're interacting with is on the same network as the system running the app (your PC), or app will not be happy.

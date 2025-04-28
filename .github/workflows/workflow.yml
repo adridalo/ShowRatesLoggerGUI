@@ -51,6 +51,10 @@ jobs:
     - name: Publish
       run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ${{ env.PUBLISH_DIR }} --self-contained -p:PublishReadyToRun=true -p:PublishSingleFile=false
 
+    - name: Rename executable
+      run: |
+        Rename-Item -Patch "${{ env.PUBLISH_DIR }}\ShowRatesLoggerGUI.exe" -NewName "_ShowRatesLoggerGUI.exe"
+
     - name: Zip artifacts
       shell: pwsh
       run: |
