@@ -53,7 +53,7 @@ jobs:
 
     - name: Rename executable
       run: |
-        Rename-Item -Patch "${{ env.PUBLISH_DIR }}\ShowRatesLoggerGUI.exe" -NewName "_ShowRatesLoggerGUI.exe"
+        Rename-Item -Path "${{ env.PUBLISH_DIR }}\ShowRatesLoggerGUI.exe" -NewName "_ShowRatesLoggerGUI.exe"
 
     - name: Zip artifacts
       shell: pwsh
