@@ -5,7 +5,7 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ShowRatesLoggerGUI.MainWindow"
         Title="ShowRatesLoggerGUI"
-        Height="800"
+        Height="500"
         Width="800">
 
 	<StackPanel>
@@ -56,7 +56,8 @@
 				<NumericUpDown HorizontalContentAlignment="Center"
                                Width="200"
                                x:Name="ShowRatesFetchIntervalInput"
-                               Increment="5" />
+                               Increment="5"
+							   Minimum="1"/>
 				<Label>seconds</Label>
 			</StackPanel>
 
