@@ -193,7 +193,7 @@ public partial class MainWindow : Window
             // Create initial empty file
             if ((bool)CsvOutputCheckbox.IsChecked)
             {
-                File.WriteAllText(_logFilePath, $"Time,Render,Capture,Transfer{Environment.NewLine}");
+                File.WriteAllText(_logFilePath, $"Time,Window #,Render,Capture,Transfer{Environment.NewLine}");
             } else
             {
                 File.WriteAllText(_logFilePath, $"ShowRatesLoggerGUI || {IPAddressInput.Text} || Started at {DateTime.Now} | {_windowsQuantity} windows{Environment.NewLine}");
@@ -304,28 +304,66 @@ public partial class MainWindow : Window
 
     private void ProcessResponse(string response, bool? showAllSourceRates = false, bool? outputToCsv = false)
     {
-        if ((bool)showAllSourceRates)
+        if ((bool)showAllSourceRates && (bool)outputToCsv)
         {
-            var timestamp = DateTime.Now.ToString();
-            var filteredLines = response
-                .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-                .Where(l => !l.Contains('>') && !l.Contains("***showrates***"));
-
-            var cleanedResponse = $"{timestamp}:\n{string.Join(Environment.NewLine, filteredLines)}\n\n";
-
-            if (cleanedResponse == null) return;
-
-            LogToFile(cleanedResponse);
-        }
-        else if((bool)outputToCsv)
-        {
-            GetAverageRates(response);
-            LogToFile(response, true);
+            LogToFile(response, true, true);
         }
         else
         {
-            GetAverageRates(response);
-            LogToFile();
+            if ((bool)showAllSourceRates)
+            {
+                var timestamp = DateTime.Now.ToString();
+                var filteredLines = response
+                    .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                    .Where(l => !l.Contains('>') && !l.Contains("***showrates***"));
+
+                var cleanedResponse = $"{timestamp}:\n{string.Join(Environment.NewLine, filteredLines)}\n\n";
+
+                if (cleanedResponse == null) return;
+
+                LogToFile(cleanedResponse);
+            }
+            else if ((bool)outputToCsv)
+            {
+                GetAverageRates(response);
+                LogToFile(response, true);
+            }
+            else
+            {
+                GetAverageRates(response);
+                LogToFile();
+            }
+        }
+    }
+
+    private void WriteAllRatesToCsv(string response)
+    {
+        var lines = response.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+
+        var windowRegex = new Regex(@"Window (\d+)\s+Render, Capture, Transfer: ([\d.]+), ([\d.]+), ([\d.]+)");
+        var layoutRegex = new Regex(@"Layout average\s+Render, Capture, Transfer: ([\d.]+), ([\d.]+), ([\d.]+)");
+
+        foreach ( var line in lines )
+        {
+            Match windowMatch = windowRegex.Match(line);
+            if(windowMatch.Success)
+            {
+                var windowNumber = windowMatch.Groups[1].Value;
+                var render = windowMatch.Groups[2].Value;
+                var capture = windowMatch.Groups[3].Value;
+                var transfer = windowMatch.Groups[4].Value;
+
+                File.AppendAllText(_logFilePath, $"{DateTime.Now},{windowNumber},{render},{capture},{transfer}{Environment.NewLine}");
+            }
+            else if(layoutRegex.IsMatch(line))
+            {
+                var layoutMatch = layoutRegex.Match(line);
+                var render = layoutMatch.Groups[1].Value;
+                var capture = layoutMatch.Groups[2].Value;
+                var transfer = layoutMatch.Groups[3].Value;
+
+                File.AppendAllText(_logFilePath, $"{DateTime.Now},Average,{render},{capture},{transfer}{Environment.NewLine}{Environment.NewLine}");
+            }
         }
     }
 
@@ -377,7 +415,7 @@ public partial class MainWindow : Window
         _transferAverage = _transferAverage == 0 ? transfer : Math.Round((transfer + _transferAverage) / 2, 2);
     }
 
-    private void LogToFile(string content = null, bool outputToCsv = false)
+    private void LogToFile(string content = null, bool outputToCsv = false, bool showAllRates = false)
     {
         try
         {
@@ -392,7 +430,10 @@ public partial class MainWindow : Window
             {
                 if(outputToCsv)
                 {
-                    File.AppendAllText(_logFilePath, $"{DateTime.Now},{_renderAverage},{_captureAverage},{_transferAverage}{Environment.NewLine}");
+                    if (showAllRates)
+                        WriteAllRatesToCsv(content);
+                    else
+                        File.AppendAllText(_logFilePath, $"{DateTime.Now},Average,{_renderAverage},{_captureAverage},{_transferAverage}{Environment.NewLine}");
                 }
                 else
                 {
