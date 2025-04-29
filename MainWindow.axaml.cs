@@ -99,6 +99,11 @@ public partial class MainWindow : Window
         try
         {
             AttemptConnection();
+            var response = await GetResponseAsync(ShowRatesTerminalCommand);
+            if(response.Contains("NotStarted"))
+            {
+                await GetResponseAsync("start\n\r");
+            }
         }
         catch (Exception ex)
         {
