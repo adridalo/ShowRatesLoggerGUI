@@ -26,6 +26,7 @@ Note: For whatever interval you enter, you'll have to wait x amount of seconds b
 - Theme changing (dark/light)
 - Recycle output for less clutter
 - ~~Add CSV implementation so if user would like to sort lowest rates, it would be easier to see when rates were to have gone bad.~~
+- Add timer for how long to run the logging for (Thanks Ben).
 
 ***
 
