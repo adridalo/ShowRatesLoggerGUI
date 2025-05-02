@@ -120,7 +120,7 @@ public partial class MainWindow : Window
         _localHostIpAddress = null;
         _cancellationTokenSource?.Dispose();
         _cancellationTokenSource = new CancellationTokenSource();
-
+        
         _telnetClient = new Client(_localHostIpAddress == null ? IPAddressInput.Text : _localHostIpAddress, 23, _cancellationTokenSource.Token);
          
         _isConnected = true;
@@ -284,6 +284,7 @@ public partial class MainWindow : Window
         RunLoggingByIntervalInput.IsEnabled = true;
         ShowAllSourceRatesCheckbox.IsEnabled = true;
         CsvOutputCheckbox.IsEnabled = true;
+        RunLoggingByIntervalCheckbox.IsEnabled = true;
 
         OpenFileButton.IsVisible = false;
         OpenFileButton.IsEnabled = false;
