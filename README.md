@@ -21,12 +21,12 @@ Note: For whatever interval you enter, you'll have to wait x amount of seconds b
 ***
 
 ## Upcoming features for the foreseeable future:
-- Show output in the application itself (integrated console sort-of-deal)
 - ~~For overall average of sources, show the number of sources~~ as well as resolutions and other info.
-- Theme changing (dark/light)
+- Theme changing (dark/light) (NTH)
 - Recycle output for less clutter
 - ~~Add CSV implementation so if user would like to sort lowest rates, it would be easier to see when rates were to have gone bad.~~
 - Add timer for how long to run the logging for (Thanks Ben).
+- Custom file path location
 
 ***
 
