@@ -31,6 +31,7 @@ public partial class MainWindow : Window
     private bool _isRunning;
     private bool _isConnected;
     private string _localHostIpAddress;
+    private Stopwatch _stopwatch;
 
     public MainWindow()
     {
@@ -128,7 +129,8 @@ public partial class MainWindow : Window
         ShowRatesFetchIntervalSection.IsEnabled = true;
         ShowRatesFetchIntervalSection.IsVisible = true;
         ShowRatesFetchIntervalInput.Text = string.Empty;
-        GetNumberOfWindows();
+        // TODO: Fix formatting (causing incorrect window value)
+        // GetNumberOfWindows();
     }
 
     public async void OnRun(object sender, RoutedEventArgs e)
@@ -152,9 +154,16 @@ public partial class MainWindow : Window
         }
         else
         {
-            StartMonitoring();
+            if(RunLoggingByIntervalInput.Value != null)
+                StartMonitoring((double)RunLoggingByIntervalInput.Value); 
+            else
+                StartMonitoring();
         }
     }
+
+    public void RunLoggingByIntervalChecked(object sender, RoutedEventArgs e) => RunLoggingByIntervalSection.IsVisible = true;
+
+    public void RunLoggingByIntervalUnchecked(object sender, RoutedEventArgs e) => RunLoggingByIntervalSection.IsVisible = false;
 
     public void OpenLogFile(object sender, RoutedEventArgs e)
     {
@@ -169,6 +178,7 @@ public partial class MainWindow : Window
             if (!File.Exists(_logFilePath))
             {
                 UpdateRunStatus("Log file doesn't exist yet", Brushes.Orange);
+                return;
             }
 
             Process.Start(new ProcessStartInfo
@@ -183,7 +193,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void StartMonitoring()
+    private async Task StartMonitoring(double? logForSeconds = null)
     {
         try
         {
@@ -212,16 +222,27 @@ public partial class MainWindow : Window
             // Stop any existing timer
             _executionTimer?.Stop();
 
+            _stopwatch = Stopwatch.StartNew();
+
             // Execute first command immediately
-            ExecuteCommandAsync();
+            await ExecuteCommandAsync();
 
             // Set up timer for subsequent executions
             _executionTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(_fetchInterval)
             };
+
             _executionTimer.Tick += async (s, e) =>
             {
+                if(logForSeconds.HasValue && _stopwatch.Elapsed.TotalMinutes >= logForSeconds.Value) 
+                {
+                    _stopwatch.Stop();
+                    await ExecuteCommandAsync();
+                    StopMonitoring();
+                    return;
+                }
+
                 await ExecuteCommandAsync();
                 OpenFileButton.IsEnabled = true;
             };
@@ -233,9 +254,14 @@ public partial class MainWindow : Window
             RunButton.Content = "Stop";
             RunButton.Foreground = Brushes.Red;
             ShowRatesFetchIntervalInput.IsEnabled = false;
+            RunLoggingByIntervalInput.IsEnabled = false;
+
             ShowAllSourceRatesCheckbox.IsEnabled = false;
             CsvOutputCheckbox.IsEnabled = false;
+            RunLoggingByIntervalCheckbox.IsEnabled = false;
+
             IPAddressInput.IsEnabled = false;
+
             ConnectButton.IsEnabled = false;
             OpenFileButton.IsVisible = true;
             OpenFileButton.Content = "Open File";
@@ -255,6 +281,7 @@ public partial class MainWindow : Window
         RunButton.Content = "Run";
         RunButton.Foreground = Brushes.White;
         ShowRatesFetchIntervalInput.IsEnabled = true;
+        RunLoggingByIntervalInput.IsEnabled = true;
         ShowAllSourceRatesCheckbox.IsEnabled = true;
         CsvOutputCheckbox.IsEnabled = true;
 
@@ -264,11 +291,11 @@ public partial class MainWindow : Window
         IPAddressInput.IsEnabled = true;
         ConnectButton.IsEnabled = true;
 
-        if (!wallNotStarted) { UpdateRunStatus("Stopped", Brushes.White); }
+        if (!wallNotStarted) { UpdateRunStatus($"Stopped logging after {Math.Round(_stopwatch.Elapsed.TotalSeconds, 2)} second(s) [{Math.Round(_stopwatch.Elapsed.TotalMinutes, 2)} minute(s)]", Brushes.White); }
         else { UpdateRunStatus("Wall not started", Brushes.Red); }
     }
 
-    private async Task<string> GetResponseAsync(string command, int readFromServer = 1)
+    private async Task<string> GetResponseAsync(string command, int readFromServer = 2)
     {
         await _telnetClient.WriteLineAsync(command);
         string response = await _telnetClient.ReadAsync(TimeSpan.FromMinutes(readFromServer));
@@ -291,6 +318,8 @@ public partial class MainWindow : Window
             }
 
             ProcessResponse(response, ShowAllSourceRatesCheckbox.IsChecked, CsvOutputCheckbox.IsChecked);
+
+
         }
         catch (TaskCanceledException)
         {
@@ -304,6 +333,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             UpdateRunStatus($"Error: {ex.Message}", Brushes.Red);
+            StopMonitoring();
         }
     }
 
@@ -389,29 +419,30 @@ public partial class MainWindow : Window
             double.Parse(match[2].Value));
     }
 
-    private async void GetNumberOfWindows()
-    {
-        string status = await GetResponseAsync(StatusCommand);
-        string currentLayout = "";
+    // TODO: Fix formatting (causing incorrect window value)
+    // private async void GetNumberOfWindows()
+    // {
+    //     string status = await GetResponseAsync(StatusCommand);
+    //     string currentLayout = "";
 
-        foreach (var line in status.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
-        {
-            if(line.StartsWith("CurrentLayout:"))
-            {
-                currentLayout = line.Split(":")[1].Trim();
-                break;
-            }
-        }
+    //     foreach (var line in status.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+    //     {
+    //         if(line.StartsWith("CurrentLayout:"))
+    //         {
+    //             currentLayout = line.Split(":")[1].Trim();
+    //             break;
+    //         }
+    //     }
 
-        string windowsResponse = await GetResponseAsync($"window \"{currentLayout}\" \r\n");
+    //     string windowsResponse = await GetResponseAsync($"window \"{currentLayout}\" \r\n");
 
-        var match = Regex.Match(windowsResponse, @"-(\d+)");
-        if(match.Success)
-        {
-            _windowsQuantity = int.Parse(match.Groups[1].Value.Trim()) + 1;
-        } 
-        return;
-    }
+    //     var match = Regex.Match(windowsResponse, @"-(\d+)");
+    //     if(match.Success)
+    //     {
+    //         _windowsQuantity = int.Parse(match.Groups[1].Value.Trim()) + 1;
+    //     } 
+    //     return;
+    // }
 
     private void UpdateAverages(double render, double capture, double transfer)
     {

@@ -57,7 +57,8 @@
                                Width="200"
                                x:Name="ShowRatesFetchIntervalInput"
                                Increment="5"
-							   Minimum="1"/>
+							   Minimum="1"
+							   Value="1"/>
 				<Label>seconds</Label>
 			</StackPanel>
 
@@ -77,6 +78,32 @@
 						  VerticalAlignment="Center" />
 			</StackPanel>
 
+			<StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+				<Label VerticalAlignment="Center">Run logging for specified time</Label>
+				<CheckBox x:Name="RunLoggingByIntervalCheckbox"
+						  VerticalAlignment="Center"
+						  Checked="RunLoggingByIntervalChecked"
+						  Unchecked="RunLoggingByIntervalUnchecked"/>
+			</StackPanel>
+
+			<StackPanel Orientation="Horizontal"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						IsVisible="false"
+						x:Name="RunLoggingByIntervalSection"
+						Margin="0,0,0,10">
+				<Label>Run for</Label>
+					<NumericUpDown HorizontalContentAlignment="Center"
+						   Width="200"
+						   x:Name="RunLoggingByIntervalInput"
+						   Increment="0.1"
+						   Minimum="1"
+						   FormatString="F1"/>
+				<Label>minutes</Label>
+			</StackPanel>
+
 			<Button Click="OnRun"
                     HorizontalAlignment="Center"
                     FontWeight="Bold"
@@ -94,7 +121,8 @@
                     x:Name="OpenFileButton"
                     HorizontalAlignment="Center"
                     IsVisible="false"
-                    IsEnabled="false" />
+                    IsEnabled="false">Open File
+			</Button>
 		</StackPanel>
 
 	</StackPanel>
