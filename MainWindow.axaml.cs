@@ -120,7 +120,7 @@ public partial class MainWindow : Window
         _localHostIpAddress = null;
         _cancellationTokenSource?.Dispose();
         _cancellationTokenSource = new CancellationTokenSource();
-
+        
         _telnetClient = new Client(_localHostIpAddress == null ? IPAddressInput.Text : _localHostIpAddress, 23, _cancellationTokenSource.Token);
          
         _isConnected = true;
@@ -200,10 +200,13 @@ public partial class MainWindow : Window
             // Initialize/clear the log file
             _logFilePath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                (bool)CsvOutputCheckbox.IsChecked ? $"{IPAddressInput.Text}-RatesAverage.csv" : $"{IPAddressInput.Text}-RatesAverage.txt");
+                $"ShowRatesLoggerGUI_{IPAddressInput.Text}"
+            );
 
-            if (File.Exists(_logFilePath))
-                File.Delete(_logFilePath);
+            if(!Directory.Exists(_logFilePath))
+                Directory.CreateDirectory(_logFilePath);
+
+            _logFilePath += (bool)CsvOutputCheckbox.IsChecked ? $"\\{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-RatesAverage.csv" : $"\\{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-RatesAverage.txt";
 
             // Create initial empty file
             if ((bool)CsvOutputCheckbox.IsChecked)
@@ -284,6 +287,7 @@ public partial class MainWindow : Window
         RunLoggingByIntervalInput.IsEnabled = true;
         ShowAllSourceRatesCheckbox.IsEnabled = true;
         CsvOutputCheckbox.IsEnabled = true;
+        RunLoggingByIntervalCheckbox.IsEnabled = true;
 
         OpenFileButton.IsVisible = false;
         OpenFileButton.IsEnabled = false;
@@ -291,7 +295,7 @@ public partial class MainWindow : Window
         IPAddressInput.IsEnabled = true;
         ConnectButton.IsEnabled = true;
 
-        if (!wallNotStarted) { UpdateRunStatus($"Stopped logging after {Math.Round(_stopwatch.Elapsed.TotalSeconds, 2)} second(s) [{Math.Round(_stopwatch.Elapsed.TotalMinutes, 2)} minute(s)]", Brushes.White); }
+        if (!wallNotStarted) { UpdateRunStatus($"Stopped logging after {Math.Round(_stopwatch.Elapsed.TotalMinutes, 2)} minute(s)", Brushes.White); }
         else { UpdateRunStatus("Wall not started", Brushes.Red); }
     }
 
