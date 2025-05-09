@@ -202,11 +202,12 @@ public partial class MainWindow : Window
                 Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                 $"ShowRatesLoggerGUI_{IPAddressInput.Text}"
             );
+            string currentDateAndTime = DateTime.Now.ToString("yyyy-MM-dd_HH_mm_ss");
 
             if(!Directory.Exists(_logFilePath))
                 Directory.CreateDirectory(_logFilePath);
 
-            _logFilePath += (bool)CsvOutputCheckbox.IsChecked ? $"\\{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-RatesAverage.csv" : $"\\{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-RatesAverage.txt";
+            _logFilePath += (bool)CsvOutputCheckbox.IsChecked ? $"\\{currentDateAndTime}-RatesAverage.csv" : $"\\{currentDateAndTime}-RatesAverage.txt";
 
             // Create initial empty file
             if ((bool)CsvOutputCheckbox.IsChecked)

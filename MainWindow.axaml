@@ -6,7 +6,8 @@
         x:Class="ShowRatesLoggerGUI.MainWindow"
         Title="ShowRatesLoggerGUI"
         Height="500"
-        Width="800">
+        Width="800"
+		Icon="/assets/SRLG.ico">
 
 	<StackPanel>
 
