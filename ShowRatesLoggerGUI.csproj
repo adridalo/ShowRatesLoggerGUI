@@ -6,6 +6,7 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationIcon>assets\SRLG.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,6 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="assets\" />
+    <Content Include="assets\SRLG.ico" />
   </ItemGroup>
 </Project>
