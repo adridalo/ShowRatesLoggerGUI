@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Threading;
 using ShowRatesLoggerGUI.Services;
 
 namespace ShowRatesLoggerGUI;
@@ -14,7 +15,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _telnetService = new TelnetService(UpdateConnectionStatus);
-        _monitoringService = new MonitoringService(UpdateRunStatus);
+        _monitoringService = new MonitoringService(UpdateRunStatus, OnStopMonitoring, UpdateCurrentRates);
         InitializeUIState();
     }
 
@@ -60,7 +61,9 @@ public partial class MainWindow : Window
         if(_monitoringService.IsRunning)
         {
             _monitoringService.Stop();
+            RunButton.Content = "Run";
             StopLoggingUIComponents();
+            CurrentRatesText.Text = string.Empty;
         }
         else
         {
@@ -69,17 +72,20 @@ public partial class MainWindow : Window
                 ShowAllSourceRatesCheckbox.IsChecked ?? false,
                 CsvOutputCheckbox.IsChecked ?? false);
             StartLoggingUIComponents();
+            CurrentRatesText.Text = _monitoringService.CurrentRates;
         }
     }
 
     private void StartLoggingUIComponents()
     {
+        IPAddressInput.IsEnabled = false;
         ConnectButton.IsEnabled = false;
         RunLoggingByIntervalInput.IsEnabled = false;
         ShowAllSourceRatesCheckbox.IsEnabled = false;
         CsvOutputCheckbox.IsEnabled = false;
         RunLoggingByIntervalSection.IsEnabled = false;
         RunLoggingByIntervalCheckbox.IsEnabled = false;
+        RunLoggingByIntervalInput.IsEnabled = false;
         RunButton.Content = "Stop";
         OpenFileButton.IsVisible = true;
         OpenFileButton.IsEnabled = true;
@@ -87,15 +93,33 @@ public partial class MainWindow : Window
 
     private void StopLoggingUIComponents()
     {
+        IPAddressInput.IsEnabled = true;
         ConnectButton.IsEnabled = true;
         RunLoggingByIntervalInput.IsEnabled = true;
         ShowAllSourceRatesCheckbox.IsEnabled = true;
         CsvOutputCheckbox.IsEnabled = true;
         RunLoggingByIntervalSection.IsEnabled = true;
         RunLoggingByIntervalCheckbox.IsEnabled = true;
+        RunLoggingByIntervalInput.IsEnabled = true;
         RunButton.Content = "Run";
         OpenFileButton.IsVisible = false;
         OpenFileButton.IsEnabled = false;
+    }
+
+    private void UpdateCurrentRates(string currentRates)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            CurrentRatesText.Text = currentRates;
+        });
+    }
+
+    private void OnStopMonitoring()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            RunButton.Content = "Run";
+        });
     }
 
     public void RunLoggingByIntervalChecked(object sender, RoutedEventArgs e) => RunLoggingByIntervalSection.IsVisible = true;

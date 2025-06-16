@@ -5,7 +5,7 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ShowRatesLoggerGUI.MainWindow"
         Title="ShowRatesLoggerGUI"
-        Height="500"
+        Height="750"
         Width="800"
 		Icon="/assets/SRLG.ico">
 
@@ -59,7 +59,7 @@
                                x:Name="ShowRatesFetchIntervalInput"
                                Increment="5"
 							   Minimum="3"
-							   Value="1"/>
+							   Value="3"/>
 				<Label>seconds</Label>
 			</StackPanel>
 
@@ -124,6 +124,13 @@
                     IsVisible="false"
                     IsEnabled="false">Open File
 			</Button>
+		</StackPanel>
+
+		<StackPanel HorizontalAlignment="Center">
+			<TextBlock 
+				x:Name="CurrentRatesText"
+				HorizontalAlignment="Center"
+			/>
 		</StackPanel>
 
 	</StackPanel>

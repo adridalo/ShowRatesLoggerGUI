@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Avalonia.Media;
 using Avalonia.Threading;
 using ShowRatesLoggerGUI.Utilities;
@@ -17,11 +13,16 @@ namespace ShowRatesLoggerGUI.Services
         private DispatcherTimer _timer;
         private Stopwatch _stopwatch;
         private readonly Action<string, IBrush> _updateRunStatus;
+        private readonly Action<string> _updateCurrentRates;
+        private readonly Action onStop;
         public bool IsRunning { get; private set; }
+        public string CurrentRates {  get; private set; }
 
-        public MonitoringService(Action<string, IBrush> updateRunStatus)
+        public MonitoringService(Action<string, IBrush> updateRunStatus, Action onStop, Action<string> updateCurrentRates)
         {
             _updateRunStatus = updateRunStatus;
+            this.onStop = onStop;
+            _updateCurrentRates = updateCurrentRates;
         }
 
         public void Start(
@@ -55,6 +56,7 @@ namespace ShowRatesLoggerGUI.Services
                 if (durationMinutes.HasValue && _stopwatch.Elapsed.TotalMinutes >= durationMinutes.Value)
                 {
                     Stop();
+                    onStop?.Invoke();
                     return;
                 }
 
@@ -66,6 +68,8 @@ namespace ShowRatesLoggerGUI.Services
                 }
 
                 var rates = RateParser.Parse(response);
+                CurrentRates = RateParser.ShowRatesCleanOutput(response);
+                _updateCurrentRates?.Invoke(CurrentRates);
                 LogUtility.Log(_logFilePath, response, rates, showAll, csvOutput);
             };
 

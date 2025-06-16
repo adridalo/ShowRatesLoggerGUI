@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using ShowRatesLoggerGUI.Models;
 
 namespace ShowRatesLoggerGUI.Utilities
@@ -26,6 +23,16 @@ namespace ShowRatesLoggerGUI.Utilities
                 Capture = double.Parse(matches[1].Value),
                 Transfer = double.Parse(matches[2].Value),
             };
+        }
+
+        public static string ShowRatesCleanOutput(string response)
+        {
+            string cleanedOutput = string.Join(Environment.NewLine,
+                response.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                         .Where(line => !line.Trim().Equals("***showrates*** terminal"))
+                         .Select(line => line.TrimStart('>'))
+            );
+            return cleanedOutput;
         }
     }
 }
