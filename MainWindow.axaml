@@ -58,7 +58,7 @@
                                Width="200"
                                x:Name="ShowRatesFetchIntervalInput"
                                Increment="5"
-							   Minimum="1"
+							   Minimum="3"
 							   Value="1"/>
 				<Label>seconds</Label>
 			</StackPanel>
