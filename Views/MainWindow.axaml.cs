@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using ShowRatesLoggerGUI.Models;
 using ShowRatesLoggerGUI.Services;
 
 namespace ShowRatesLoggerGUI;
@@ -68,9 +69,28 @@ public partial class MainWindow : Window
         else
         {
             double? logDuration = (double?)RunLoggingByIntervalInput.Value;
+            RateData? rctNotificationObject;
+            if ((bool)RCTNotificationsCheckbox.IsChecked)
+            {
+                rctNotificationObject = (RateData?)new RateData()
+                {
+                    Render = double.Parse(RenderNotificationSetting.Text),
+                    RenderNotificationsEnabled = (bool)RenderNotificationsEnabled.IsChecked,
+                    Capture = double.Parse(CaptureNotificationSetting.Text),
+                    CaptureNotificationsEnabled = (bool)CaptureNotificationsEnabled.IsChecked,
+                    Transfer = double.Parse(TransferNotificationSetting.Text),
+                    TransferNotificationsEnabled = (bool)TransferNotificationsEnabled.IsChecked,
+                };
+            }
+            else
+            {
+                rctNotificationObject = null;
+            }
+
             _monitoringService.Start(_telnetService, interval, logDuration, IPAddressInput.Text,
                 ShowAllSourceRatesCheckbox.IsChecked ?? false,
-                CsvOutputCheckbox.IsChecked ?? false);
+                CsvOutputCheckbox.IsChecked ?? false,
+                rctNotificationObject);
             StartLoggingUIComponents();
             CurrentRatesText.Text = _monitoringService.CurrentRates;
         }
@@ -86,6 +106,15 @@ public partial class MainWindow : Window
         RunLoggingByIntervalSection.IsEnabled = false;
         RunLoggingByIntervalCheckbox.IsEnabled = false;
         RunLoggingByIntervalInput.IsEnabled = false;
+        ShowRatesFetchIntervalInput.IsEnabled = false;
+        RCTNotificationsSection.IsEnabled = false;
+        RCTNotificationsCheckbox.IsEnabled = false;
+        RenderNotificationsEnabled.IsEnabled = false;
+        CaptureNotificationsEnabled.IsEnabled = false;
+        TransferNotificationsEnabled.IsEnabled = false;
+        RenderNotificationSetting.IsEnabled = false;
+        CaptureNotificationSetting.IsEnabled = false;
+        TransferNotificationSetting.IsEnabled = false;
         RunButton.Content = "Stop";
         OpenFileButton.IsVisible = true;
         OpenFileButton.IsEnabled = true;
@@ -101,6 +130,15 @@ public partial class MainWindow : Window
         RunLoggingByIntervalSection.IsEnabled = true;
         RunLoggingByIntervalCheckbox.IsEnabled = true;
         RunLoggingByIntervalInput.IsEnabled = true;
+        ShowRatesFetchIntervalInput.IsEnabled = true;
+        RCTNotificationsSection.IsEnabled = true;
+        RCTNotificationsCheckbox.IsEnabled = true;
+        RenderNotificationsEnabled.IsEnabled = true;
+        CaptureNotificationsEnabled.IsEnabled = true;
+        TransferNotificationsEnabled.IsEnabled = true;
+        RenderNotificationSetting.IsEnabled = true;
+        CaptureNotificationSetting.IsEnabled = true;
+        TransferNotificationSetting.IsEnabled = true;
         RunButton.Content = "Run";
         OpenFileButton.IsVisible = false;
         OpenFileButton.IsEnabled = false;
@@ -124,6 +162,8 @@ public partial class MainWindow : Window
 
     public void RunLoggingByIntervalChecked(object sender, RoutedEventArgs e) => RunLoggingByIntervalSection.IsVisible = true;
     public void RunLoggingByIntervalUnchecked(object sender, RoutedEventArgs e) => RunLoggingByIntervalSection.IsVisible = false;
+    public void RCTNotificationsChecked(object sender, RoutedEventArgs e) => RCTNotificationsSection.IsVisible = true;
+    public void RCTNotificationsUnchecked(object sender, RoutedEventArgs e) => RCTNotificationsSection.IsVisible = false;
 
     public void OpenLogFile(object sender, RoutedEventArgs e)
     {

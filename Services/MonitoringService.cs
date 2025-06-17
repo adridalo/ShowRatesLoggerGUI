@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Microsoft.Toolkit.Uwp.Notifications;
+using ShowRatesLoggerGUI.Models;
 using ShowRatesLoggerGUI.Utilities;
 
 namespace ShowRatesLoggerGUI.Services
@@ -31,7 +33,8 @@ namespace ShowRatesLoggerGUI.Services
             double? durationMinutes,
             string ip,
             bool showAll,
-            bool csvOutput
+            bool csvOutput,
+            RateData rctNotificationsSettings
         )
         {
             var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"ShowRatesLoggerGUI_{ip}");
@@ -55,6 +58,7 @@ namespace ShowRatesLoggerGUI.Services
             {
                 if (durationMinutes.HasValue && _stopwatch.Elapsed.TotalMinutes >= durationMinutes.Value)
                 {
+                    _updateCurrentRates(string.Empty);
                     Stop();
                     onStop?.Invoke();
                     return;
@@ -67,10 +71,14 @@ namespace ShowRatesLoggerGUI.Services
                     return;
                 }
 
-                var rates = RateParser.Parse(response);
+                var currentRates = RateParser.Parse(response);
+
+                if (rctNotificationsSettings != null)
+                    RCTNotificationsHandling(currentRates, rctNotificationsSettings);
+
                 CurrentRates = RateParser.ShowRatesCleanOutput(response);
                 _updateCurrentRates?.Invoke(CurrentRates);
-                LogUtility.Log(_logFilePath, response, rates, showAll, csvOutput);
+                LogUtility.Log(_logFilePath, response, currentRates, showAll, csvOutput);
             };
 
             _timer.Start();
@@ -78,11 +86,45 @@ namespace ShowRatesLoggerGUI.Services
             _updateRunStatus("Running...", Brushes.Orange);
         }
 
+        private void RCTNotificationsHandling(RateData currentRates, RateData rctNotificationSettings)
+        {
+            // Render check
+            if (rctNotificationSettings.RenderNotificationsEnabled && currentRates.Render < rctNotificationSettings.Render)
+            {
+                new ToastContentBuilder()
+                .AddText($"Render has gone below {rctNotificationSettings.Render}!")
+                .Show();
+            }
+            // Capture check
+            if (rctNotificationSettings.CaptureNotificationsEnabled && currentRates.Capture < rctNotificationSettings.Capture)
+            {
+                new ToastContentBuilder()
+                .AddText($"Capture has gone below {rctNotificationSettings.Capture}")
+                .Show();
+            }
+            // Transfer
+            if (rctNotificationSettings.TransferNotificationsEnabled && currentRates.Transfer < rctNotificationSettings.Transfer)
+            {
+                new ToastContentBuilder()
+                .AddText($"Transfer has gone below {rctNotificationSettings.Transfer}")
+                .Show();
+            }
+        }
+
         public void Stop(string reason = null)
         {
             _timer?.Stop();
             IsRunning = false;
-            _updateRunStatus(reason ?? $"Stopped after {_stopwatch.Elapsed.TotalMinutes:F2} minutes", Brushes.White);
+            _updateRunStatus(reason ?? $"Stopped after {MinutesToHumanReadableTime(_stopwatch)}", Brushes.White);
+        }
+
+        private string MinutesToHumanReadableTime(Stopwatch totalTime)
+        {
+            if (totalTime.Elapsed.TotalMinutes < 1) return $"{totalTime.Elapsed.TotalSeconds:F2} seconds.";
+            if (totalTime.Elapsed.TotalMinutes >= 1 && totalTime.Elapsed.TotalMinutes < 60) return $"{totalTime.Elapsed.TotalMinutes:F2} minutes.";
+            if (totalTime.Elapsed.TotalMinutes >= 60 && totalTime.Elapsed.TotalMinutes < 1440) return $"{totalTime.Elapsed.TotalHours:F2} hours.";
+            if (totalTime.Elapsed.TotalMinutes >= 1440) return $"{totalTime.Elapsed.TotalDays:F2} days.";
+            else return string.Join("", totalTime.Elapsed.TotalMinutes);
         }
 
         public void OpenLogFile()

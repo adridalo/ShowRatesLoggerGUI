@@ -25,6 +25,8 @@ namespace ShowRatesLoggerGUI.Utilities
             };
         }
 
+        public static RateData Parse(double r, double c, double t) => new RateData { Render = r, Capture = c, Transfer = t };
+
         public static string ShowRatesCleanOutput(string response)
         {
             string cleanedOutput = string.Join(Environment.NewLine,

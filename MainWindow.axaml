@@ -105,6 +105,54 @@
 				<Label>minutes</Label>
 			</StackPanel>
 
+			<StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+				<Label VerticalAlignment="Center">Add RCT notifications</Label>
+				<CheckBox x:Name="RCTNotificationsCheckbox"
+						  VerticalAlignment="Center"
+						  Checked="RCTNotificationsChecked"
+						  Unchecked="RCTNotificationsUnchecked" />
+			</StackPanel>
+
+			<StackPanel x:Name="RCTNotificationsSection"
+						Orientation="Vertical"
+						VerticalAlignment="Center"
+						HorizontalAlignment="Center"
+						IsVisible="false">
+				<Label HorizontalContentAlignment="Center">
+					Get notified when Render, Capture or Transfer hit:
+				</Label>
+				<StackPanel Orientation="Horizontal"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center">
+					<Label>Render</Label>
+					<CheckBox x:Name="RenderNotificationsEnabled" />
+					<NumericUpDown HorizontalContentAlignment="Center"
+							   Width="150"
+							   Value="60"
+							   Maximum="60"
+							   Minimum="1"
+							   x:Name="RenderNotificationSetting"/>
+					<Label>Capture</Label>
+					<CheckBox x:Name="CaptureNotificationsEnabled"/>
+					<NumericUpDown HorizontalContentAlignment="Center"
+								   Width="150"
+								   Value="60"
+								   Maximum="60"
+								   Minimum="1"
+								   x:Name="CaptureNotificationSetting"/>
+					<Label>Transfer</Label>
+					<CheckBox x:Name="TransferNotificationsEnabled"/>
+					<NumericUpDown HorizontalContentAlignment="Center"
+								   Width="150"
+								   Maximum="60"
+								   Minimum="1"
+								   Value="60"
+								   x:Name="TransferNotificationSetting"/>
+				</StackPanel>
+			</StackPanel>
+
 			<Button Click="OnRun"
                     HorizontalAlignment="Center"
                     FontWeight="Bold"
@@ -127,10 +175,12 @@
 		</StackPanel>
 
 		<StackPanel HorizontalAlignment="Center">
-			<TextBlock 
-				x:Name="CurrentRatesText"
-				HorizontalAlignment="Center"
-			/>
+			<ScrollViewer VerticalScrollBarVisibility="Auto">
+				<TextBlock
+					x:Name="CurrentRatesText"
+					HorizontalAlignment="Center"
+				/>
+			</ScrollViewer>	
 		</StackPanel>
 
 	</StackPanel>
