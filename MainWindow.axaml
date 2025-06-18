@@ -18,10 +18,9 @@
                    FontWeight="Bold" />
 
 		<TextBlock TextWrapping="WrapWithOverflow"
-                   HorizontalAlignment="Center">
-			This application is used to log rates from a Mura video wall to a file in which you connect to,
-			and specify the time in seconds of how often these rates are logged.
-			Can be used to view how rates are doing over a longer period of time.
+				   TextAlignment="Center" 
+				   >
+			NOTE: If you are logging to a .csv file, <Span FontWeight="Bold" TextDecorations="Underline">do NOT! open the file in Excel or any other spreadsheet software WHILE the program is running</Span>, or else the logging may be interupted. To view the log file while the program is running, open it in a any text editor (i.e. Notepad, Notepad++, etc.).
 		</TextBlock>
 
 		<Separator />
@@ -179,6 +178,7 @@
 				<TextBlock
 					x:Name="CurrentRatesText"
 					HorizontalAlignment="Center"
+					TextAlignment="Center" 
 				/>
 			</ScrollViewer>	
 		</StackPanel>

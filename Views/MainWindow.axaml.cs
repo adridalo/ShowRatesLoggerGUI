@@ -1,9 +1,14 @@
+using System;
+using System.Diagnostics;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using ShowRatesLoggerGUI.Models;
 using ShowRatesLoggerGUI.Services;
+using ShowRatesLoggerGUI.Utilities;
+using Windows.Devices.Input;
 
 namespace ShowRatesLoggerGUI;
 
@@ -11,12 +16,14 @@ public partial class MainWindow : Window
 {
     private TelnetService _telnetService;
     private MonitoringService _monitoringService;
+    private readonly UIComponentToggler _uiToggler;
 
     public MainWindow()
     {
         InitializeComponent();
+        _uiToggler = new UIComponentToggler(this);
         _telnetService = new TelnetService(UpdateConnectionStatus);
-        _monitoringService = new MonitoringService(UpdateRunStatus, OnStopMonitoring, UpdateCurrentRates);
+        _monitoringService = new MonitoringService(UpdateRunStatus, OnStopMonitoring, UpdateCurrentRates, _uiToggler);
         InitializeUIState();
     }
 
@@ -96,53 +103,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private void StartLoggingUIComponents()
-    {
-        IPAddressInput.IsEnabled = false;
-        ConnectButton.IsEnabled = false;
-        RunLoggingByIntervalInput.IsEnabled = false;
-        ShowAllSourceRatesCheckbox.IsEnabled = false;
-        CsvOutputCheckbox.IsEnabled = false;
-        RunLoggingByIntervalSection.IsEnabled = false;
-        RunLoggingByIntervalCheckbox.IsEnabled = false;
-        RunLoggingByIntervalInput.IsEnabled = false;
-        ShowRatesFetchIntervalInput.IsEnabled = false;
-        RCTNotificationsSection.IsEnabled = false;
-        RCTNotificationsCheckbox.IsEnabled = false;
-        RenderNotificationsEnabled.IsEnabled = false;
-        CaptureNotificationsEnabled.IsEnabled = false;
-        TransferNotificationsEnabled.IsEnabled = false;
-        RenderNotificationSetting.IsEnabled = false;
-        CaptureNotificationSetting.IsEnabled = false;
-        TransferNotificationSetting.IsEnabled = false;
-        RunButton.Content = "Stop";
-        OpenFileButton.IsVisible = true;
-        OpenFileButton.IsEnabled = true;
-    }
+    private void StartLoggingUIComponents() => _uiToggler.ToggleLoggingUI(true);
 
-    private void StopLoggingUIComponents()
-    {
-        IPAddressInput.IsEnabled = true;
-        ConnectButton.IsEnabled = true;
-        RunLoggingByIntervalInput.IsEnabled = true;
-        ShowAllSourceRatesCheckbox.IsEnabled = true;
-        CsvOutputCheckbox.IsEnabled = true;
-        RunLoggingByIntervalSection.IsEnabled = true;
-        RunLoggingByIntervalCheckbox.IsEnabled = true;
-        RunLoggingByIntervalInput.IsEnabled = true;
-        ShowRatesFetchIntervalInput.IsEnabled = true;
-        RCTNotificationsSection.IsEnabled = true;
-        RCTNotificationsCheckbox.IsEnabled = true;
-        RenderNotificationsEnabled.IsEnabled = true;
-        CaptureNotificationsEnabled.IsEnabled = true;
-        TransferNotificationsEnabled.IsEnabled = true;
-        RenderNotificationSetting.IsEnabled = true;
-        CaptureNotificationSetting.IsEnabled = true;
-        TransferNotificationSetting.IsEnabled = true;
-        RunButton.Content = "Run";
-        OpenFileButton.IsVisible = false;
-        OpenFileButton.IsEnabled = false;
-    }
+    private void StopLoggingUIComponents() => _uiToggler.ToggleLoggingUI(false);
 
     private void UpdateCurrentRates(string currentRates)
     {
