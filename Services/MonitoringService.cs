@@ -16,18 +16,20 @@ namespace ShowRatesLoggerGUI.Services
         private Stopwatch _stopwatch;
         private readonly Action<string, IBrush> _updateRunStatus;
         private readonly Action<string> _updateCurrentRates;
-        private readonly Action onStop;
+        private UIComponentToggler _toggler;
+        private readonly Action _onStop;
         public bool IsRunning { get; private set; }
         public string CurrentRates {  get; private set; }
 
-        public MonitoringService(Action<string, IBrush> updateRunStatus, Action onStop, Action<string> updateCurrentRates)
+        public MonitoringService(Action<string, IBrush> updateRunStatus, Action onStop, Action<string> updateCurrentRates, UIComponentToggler toggler)
         {
-            _updateRunStatus = updateRunStatus;
-            this.onStop = onStop;
-            _updateCurrentRates = updateCurrentRates;
+            this._updateRunStatus = updateRunStatus;
+            this._onStop = onStop;
+            this._updateCurrentRates = updateCurrentRates;
+            this._toggler = toggler;
         }
 
-        public void Start(
+        public async void Start(
             TelnetService telnetService,
             double fetchInterval,
             double? durationMinutes,
@@ -54,23 +56,23 @@ namespace ShowRatesLoggerGUI.Services
                 Interval = TimeSpan.FromSeconds(fetchInterval),
             };
 
+            // Log once immediately
+            var firstResponse = await telnetService.SendCommand("***showrates*** terminal");
+            var firstResponseRates = RateParser.Parse(firstResponse);
+            LogUtility.Log(_logFilePath, firstResponse, firstResponseRates, showAll, csvOutput);
+
             _timer.Tick += async (s, e) =>
             {
                 if (durationMinutes.HasValue && _stopwatch.Elapsed.TotalMinutes >= durationMinutes.Value)
                 {
                     _updateCurrentRates(string.Empty);
+                    _toggler.ToggleLoggingUI(false);
                     Stop();
-                    onStop?.Invoke();
+                    _onStop?.Invoke();
                     return;
                 }
 
                 var response = await telnetService.SendCommand("***showrates*** terminal");
-                if (response.Contains("NotStarted"))
-                {
-                    Stop("Wall not started");
-                    return;
-                }
-
                 var currentRates = RateParser.Parse(response);
 
                 if (rctNotificationsSettings != null)
