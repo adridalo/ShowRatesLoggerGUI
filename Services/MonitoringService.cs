@@ -136,7 +136,7 @@ namespace ShowRatesLoggerGUI.Services
         public void OpenLogFile()
         {
             if(File.Exists(_logFilePath)) 
-                Process.Start(new ProcessStartInfo { FileName = _logFilePath, UseShellExecute = true });
+                Process.Start(new ProcessStartInfo { FileName = "explorer.exe", Arguments = _logFileDirectory });
         }
 
         public void Dispose()
