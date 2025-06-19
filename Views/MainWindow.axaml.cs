@@ -32,9 +32,10 @@ public partial class MainWindow : Window
         IPAddressStatus.Text = "Disconnected";
         IPAddressStatus.Foreground = Brushes.Gray;
         RunStatus.Text = string.Empty;
-        ShowRatesFetchIntervalSection.IsEnabled = false;
-        ShowRatesFetchIntervalSection.IsVisible = false;
+        SetVisible(ShowRatesFetchIntervalSection, false);
         RunButton.Content = "Run";
+        SetVisible(RunLoggingByIntervalSection, false);
+        SetVisible(RCTNotificationsSection, false);
     }
 
     public async void OnConnect(object sender, RoutedEventArgs e)
@@ -43,10 +44,15 @@ public partial class MainWindow : Window
         if (string.IsNullOrEmpty(ip)) return;
 
         var success = await _telnetService.Connect(ip);
-        if(!success) return;
+        if(!success)
+        {
+            UpdateConnectionStatus("Connection failed", Brushes.Red);
+            return;
+        }
 
-        ShowRatesFetchIntervalSection.IsEnabled = true;
-        ShowRatesFetchIntervalSection.IsVisible = true;
+        UpdateConnectionStatus("Connected", Brushes.Green);
+        SetVisible(ShowRatesFetchIntervalSection, true);
+        SetEnabled(ShowRatesFetchIntervalSection, true);
 
         var response = await _telnetService.SendCommand("***showrates*** terminal");
         if (response.Contains("NotStarted"))
@@ -64,6 +70,7 @@ public partial class MainWindow : Window
         if(!double.TryParse(ShowRatesFetchIntervalInput.Text, out var interval))
         {
             UpdateRunStatus("Invalid interval", Brushes.Red);
+            return;
         }
 
         if(_monitoringService.IsRunning)
@@ -71,36 +78,31 @@ public partial class MainWindow : Window
             _monitoringService.Stop();
             RunButton.Content = "Run";
             StopLoggingUIComponents();
-            CurrentRatesText.Text = "";
+            CurrentRatesText.Text = string.Empty;
+            return;
         }
-        else
-        {
-            double? logDuration = (double?)RunLoggingByIntervalInput.Value;
-            RateData? rctNotificationObject;
-            if ((bool)RCTNotificationsCheckbox.IsChecked)
-            {
-                rctNotificationObject = (RateData?)new RateData()
-                {
-                    Render = double.Parse(RenderNotificationSetting.Text),
-                    RenderNotificationsEnabled = (bool)RenderNotificationsEnabled.IsChecked,
-                    Capture = double.Parse(CaptureNotificationSetting.Text),
-                    CaptureNotificationsEnabled = (bool)CaptureNotificationsEnabled.IsChecked,
-                    Transfer = double.Parse(TransferNotificationSetting.Text),
-                    TransferNotificationsEnabled = (bool)TransferNotificationsEnabled.IsChecked,
-                };
-            }
-            else
-            {
-                rctNotificationObject = null;
-            }
 
-            _monitoringService.Start(_telnetService, interval, logDuration, IPAddressInput.Text,
-                ShowAllSourceRatesCheckbox.IsChecked ?? false,
-                CsvOutputCheckbox.IsChecked ?? false,
-                rctNotificationObject);
-            StartLoggingUIComponents();
-            CurrentRatesText.Text = _monitoringService.CurrentRates;
-        }
+        double? logDuration = (double?)(RunLoggingByIntervalCheckbox.IsChecked == true ? RunLoggingByIntervalInput.Value : null);
+
+        RateData? rctNotificationsObject = RCTNotificationsCheckbox.IsChecked == true ? new RateData
+        {
+            Render = double.Parse(RenderNotificationSetting.Text),
+            RenderNotificationsEnabled = RenderNotificationsEnabled.IsChecked == true,
+
+            Capture = double.Parse(CaptureNotificationSetting.Text),
+            CaptureNotificationsEnabled = RenderNotificationsEnabled.IsChecked == true,
+
+            Transfer = double.Parse(TransferNotificationSetting.Text),
+            TransferNotificationsEnabled = RenderNotificationsEnabled.IsChecked == true,
+        } : null;
+
+        _monitoringService.Start(_telnetService, interval, logDuration, IPAddressInput.Text,
+            ShowAllSourceRatesCheckbox.IsChecked ?? false,
+            CsvOutputCheckbox.IsChecked ?? false,
+            rctNotificationsObject);
+
+        StartLoggingUIComponents();
+        CurrentRatesText.Text = _monitoringService.CurrentRates;
     }
 
     private void StartLoggingUIComponents() => _uiToggler.ToggleLoggingUI(true);
@@ -123,10 +125,13 @@ public partial class MainWindow : Window
         });
     }
 
-    public void RunLoggingByIntervalChecked(object sender, RoutedEventArgs e) => RunLoggingByIntervalSection.IsVisible = true;
-    public void RunLoggingByIntervalUnchecked(object sender, RoutedEventArgs e) => RunLoggingByIntervalSection.IsVisible = false;
-    public void RCTNotificationsChecked(object sender, RoutedEventArgs e) => RCTNotificationsSection.IsVisible = true;
-    public void RCTNotificationsUnchecked(object sender, RoutedEventArgs e) => RCTNotificationsSection.IsVisible = false;
+    public void RunLoggingByIntervalChecked(object sender, RoutedEventArgs e) => SetVisible(RunLoggingByIntervalSection, true);
+    public void RunLoggingByIntervalUnchecked(object sender, RoutedEventArgs e) => SetVisible(RunLoggingByIntervalSection, false);
+    public void RCTNotificationsChecked(object sender, RoutedEventArgs e) => SetVisible(RCTNotificationsSection, true);
+    public void RCTNotificationsUnchecked(object sender, RoutedEventArgs e) => SetVisible(RCTNotificationsSection, false);
+
+    private void SetEnabled(Control control, bool isEnabled) => control.IsEnabled = isEnabled;
+    private void SetVisible(Control control, bool isVisible) => control.IsVisible = isVisible;
 
     public void OpenLogFile(object sender, RoutedEventArgs e)
     {
