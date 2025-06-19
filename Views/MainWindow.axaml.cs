@@ -71,7 +71,7 @@ public partial class MainWindow : Window
             _monitoringService.Stop();
             RunButton.Content = "Run";
             StopLoggingUIComponents();
-            CurrentRatesText.Text = string.Empty;
+            CurrentRatesText.Text = "";
         }
         else
         {
