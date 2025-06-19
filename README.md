@@ -27,6 +27,7 @@ Note: For whatever interval you enter, you'll have to wait x amount of seconds b
 - ~~Identify log files by time so you can have multiple logs of rates from the same IP (right now existing logs get deleted on each run).~~
 - ~~Add current rates to GUI (Jason)~~
 - ~~Set parameter on each value for when it goes below the value, send notification (somehow) (Lucas)~~
+- - Visualise rates in a chart (ScottPlot)
 
 ## Nice to have features (not necessary):
 - Theme changing (dark/light) (NTH)

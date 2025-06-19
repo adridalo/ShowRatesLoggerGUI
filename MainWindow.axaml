@@ -57,8 +57,8 @@
                                Width="200"
                                x:Name="ShowRatesFetchIntervalInput"
                                Increment="5"
-							   Minimum="3"
-							   Value="3"/>
+							   Minimum="5"
+							   Value="5"/>
 				<Label>seconds</Label>
 			</StackPanel>
 
@@ -169,12 +169,12 @@
                     x:Name="OpenFileButton"
                     HorizontalAlignment="Center"
                     IsVisible="false"
-                    IsEnabled="false">Open File
+                    IsEnabled="false">Open Folder
 			</Button>
 		</StackPanel>
 
 		<StackPanel HorizontalAlignment="Center">
-			<ScrollViewer VerticalScrollBarVisibility="Auto">
+			<ScrollViewer VerticalScrollBarVisibility="Auto" Height="200">
 				<TextBlock
 					x:Name="CurrentRatesText"
 					HorizontalAlignment="Center"

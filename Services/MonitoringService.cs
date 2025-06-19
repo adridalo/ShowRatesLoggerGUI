@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using Avalonia.Media;
@@ -12,6 +13,7 @@ namespace ShowRatesLoggerGUI.Services
     internal class MonitoringService : IDisposable
     {
         private string _logFilePath;
+        private string _logFileDirectory;
         private DispatcherTimer _timer;
         private Stopwatch _stopwatch;
         private readonly Action<string, IBrush> _updateRunStatus;
@@ -39,10 +41,10 @@ namespace ShowRatesLoggerGUI.Services
             RateData rctNotificationsSettings
         )
         {
-            var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"ShowRatesLoggerGUI_{ip}");
-            Directory.CreateDirectory( logDir );
             var now = DateTime.Now.ToString("yyyy-MM-dd_HH_mm_ss");
-            _logFilePath = Path.Combine(logDir, $"{now}-RatesAverage{(csvOutput ? ".csv" : ".txt")}");
+            _logFileDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"ShowRatesLoggerGUI_{ip}", $"{now}-RatesAverage");
+            Directory.CreateDirectory(_logFileDirectory);
+            _logFilePath = Path.Combine(_logFileDirectory, $"{now}-RatesAverage{(csvOutput ? ".csv" : ".txt")}");
 
             if(csvOutput)
                 File.WriteAllText(_logFilePath, $"Time,Window #,Render,Capture,Transfer{Environment.NewLine}");
@@ -118,6 +120,8 @@ namespace ShowRatesLoggerGUI.Services
             _timer?.Stop();
             IsRunning = false;
             _updateRunStatus(reason ?? $"Stopped after {MinutesToHumanReadableTime(_stopwatch)}", Brushes.White);
+
+            GraphingService.GeneratePlot(_logFilePath, _logFileDirectory);
         }
 
         private string MinutesToHumanReadableTime(Stopwatch totalTime)
@@ -132,7 +136,7 @@ namespace ShowRatesLoggerGUI.Services
         public void OpenLogFile()
         {
             if(File.Exists(_logFilePath)) 
-                Process.Start(new ProcessStartInfo { FileName = _logFilePath, UseShellExecute = true });
+                Process.Start(new ProcessStartInfo { FileName = "explorer.exe", Arguments = _logFileDirectory });
         }
 
         public void Dispose()
