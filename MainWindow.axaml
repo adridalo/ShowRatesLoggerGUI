@@ -20,7 +20,7 @@
 		<TextBlock TextWrapping="WrapWithOverflow"
 				   TextAlignment="Center" 
 				   >
-			NOTE: If you are logging to a .csv file, <Span FontWeight="Bold" TextDecorations="Underline">do NOT! open the file in Excel or any other spreadsheet software WHILE the program is running</Span>, or else the logging may be interupted. To view the log file while the program is running, open it in a any text editor (i.e. Notepad, Notepad++, etc.).
+			NOTE: If you are logging to a .csv file, <Span FontWeight="Bold" TextDecorations="Underline">do NOT! open the file in Excel or any other spreadsheet software WHILE the program is running</Span>, or else the logging may be interupted. To view the log file while the program is running, open it in a any text editor (i.e. Notepad, Notepad++, etc.) or in spreadhsheet software once logging in complete.
 		</TextBlock>
 
 		<Separator />
@@ -100,6 +100,7 @@
 						   x:Name="RunLoggingByIntervalInput"
 						   Increment="0.1"
 						   Minimum="1"
+						   Value="1"								   
 						   FormatString="F1"/>
 				<Label>minutes</Label>
 			</StackPanel>
