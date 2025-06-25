@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.IO;
 using ScottPlot;
 
@@ -20,13 +21,13 @@ namespace ShowRatesLoggerGUI.Services
             var transferScatter = plot.Add.Scatter(timeColumnValues, transferColumnValues);
 
             renderScatter.LegendText = "Render";
-            renderScatter.LineWidth = 5;
+            renderScatter.LineWidth = 20;
 
             captureScatter.LegendText = "Capture";
-            captureScatter.LineWidth = 10;
+            captureScatter.LineWidth = 15;
 
             transferScatter.LegendText = "Transfer";
-            transferScatter.LineWidth = 15;
+            transferScatter.LineWidth = 10;
 
             plot.Axes.DateTimeTicksBottom();
             plot.Title($"Rates average: {Path.GetFileName(dataPath)}");

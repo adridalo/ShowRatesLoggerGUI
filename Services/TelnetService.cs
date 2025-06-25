@@ -63,6 +63,11 @@ namespace ShowRatesLoggerGUI.Services
             });
         }
 
+        public string GetApplianceType()
+        {
+
+        }
+
         public void Dispose()
         {
             _client?.Dispose();
