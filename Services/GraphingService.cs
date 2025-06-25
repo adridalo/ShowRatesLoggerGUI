@@ -20,13 +20,13 @@ namespace ShowRatesLoggerGUI.Services
             var transferScatter = plot.Add.Scatter(timeColumnValues, transferColumnValues);
 
             renderScatter.LegendText = "Render";
-            renderScatter.LineWidth = 10;
+            renderScatter.LineWidth = 5;
 
             captureScatter.LegendText = "Capture";
             captureScatter.LineWidth = 10;
 
             transferScatter.LegendText = "Transfer";
-            transferScatter.LineWidth = 5;
+            transferScatter.LineWidth = 15;
 
             plot.Axes.DateTimeTicksBottom();
             plot.Title($"Rates average: {Path.GetFileName(dataPath)}");
