@@ -63,10 +63,20 @@ namespace ShowRatesLoggerGUI.Services
             });
         }
 
-        public string GetApplianceType()
-        {
+        //public async Task<string> GetApplianceType()
+        //{
+        //    string status = await SendCommand("status");
+        //    string applianceLine = status.Split("\n")
+        //        .FirstOrDefault(line => line.StartsWith("Appliance:"));
 
-        }
+        //    if(applianceLine != null)
+        //    {
+        //        string appliance = applianceLine.Split(":")[1].Trim();
+        //        return appliance;
+        //    }
+
+        //    return null;
+        //}
 
         public void Dispose()
         {
