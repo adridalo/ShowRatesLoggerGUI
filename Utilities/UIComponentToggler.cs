@@ -16,6 +16,13 @@ namespace ShowRatesLoggerGUI.Utilities
             _window = window;
         }
 
+        public void ToggleInitialComponents(bool fromBeginning)
+        {
+            var isVisible = !fromBeginning;
+
+            _window.ShowRatesFetchIntervalSection.IsVisible = isVisible;
+        }
+
         public void ToggleLoggingUI(bool isLogging)
         {
             var isEnabled = !isLogging;
