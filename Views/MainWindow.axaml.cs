@@ -47,6 +47,8 @@ public partial class MainWindow : Window
         if(!success)
         {
             UpdateConnectionStatus("Connection failed", Brushes.Red);
+            SetVisible(ShowRatesFetchIntervalSection, false);
+            SetEnabled(ShowRatesFetchIntervalSection, false);
             return;
         }
 
