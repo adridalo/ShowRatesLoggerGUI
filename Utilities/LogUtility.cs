@@ -30,7 +30,20 @@ namespace ShowRatesLoggerGUI.Utilities
                 }
             } else
             {
-                File.AppendAllText(filePath, $"{DateTime.Now} || Render: {data?.Render}, Capture: {data?.Capture}, Transfer: {data?.Transfer}\n");
+                if(showAll)
+                {
+                    var regex = new Regex(@"Window (\d+)\s+Render, Capture, Transfer: ([\d.]+), ([\d.]+), ([\d.]+)");
+                    foreach (Match match in regex.Matches(response))
+                    {
+                        File.AppendAllText(filePath, $"{DateTime.Now} || Window {match.Groups[1]}: R:{match.Groups[2]}, C:{match.Groups[3]}, T:{match.Groups[4]}{Environment.NewLine}");
+                    }
+                }
+
+                if(data != null)
+                {
+                    File.AppendAllText(filePath, $"{DateTime.Now} || Average: R:{data.Render}, C:{data.Capture}, T:{data.Transfer}{Environment.NewLine}");
+                }
+
             }
         }
     }
